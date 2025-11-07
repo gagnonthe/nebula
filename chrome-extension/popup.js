@@ -54,6 +54,7 @@ function setupEventListeners() {
     const selectFileBtn = document.getElementById('selectFile');
     const fileInput = document.getElementById('fileInput');
     const refreshFilesBtn = document.getElementById('refreshFiles');
+    const showQrCodeBtn = document.getElementById('showQrCode');
     
     if (saveConfigBtn) {
         saveConfigBtn.addEventListener('click', saveConfig);
@@ -66,6 +67,9 @@ function setupEventListeners() {
     }
     if (refreshFilesBtn) {
         refreshFilesBtn.addEventListener('click', loadFiles);
+    }
+    if (showQrCodeBtn) {
+        showQrCodeBtn.addEventListener('click', toggleQrCode);
     }
 }
 
@@ -402,4 +406,45 @@ function formatDate(dateString) {
     if (diff < 3600000) return Math.floor(diff / 60000) + ' min';
     if (diff < 86400000) return Math.floor(diff / 3600000) + ' h';
     return date.toLocaleDateString('fr-FR');
+}
+
+// Gérer l'affichage du QR Code
+function toggleQrCode() {
+    const qrContainer = document.getElementById('qrCodeContainer');
+    const qrCanvas = document.getElementById('qrCodeCanvas');
+    const btn = document.getElementById('showQrCode');
+    
+    if (!qrContainer || !qrCanvas) return;
+    
+    if (qrContainer.classList.contains('hidden')) {
+        // Afficher et générer le QR code
+        const url = document.getElementById('serverUrl').value.trim() || serverUrl;
+        
+        if (!url) {
+            alert('Veuillez d\'abord configurer l\'URL du serveur');
+            return;
+        }
+        
+        // Générer le QR code
+        try {
+            QRCode.toCanvas(qrCanvas, url, {
+                width: 180,
+                margin: 2,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                }
+            });
+            
+            qrContainer.classList.remove('hidden');
+            btn.textContent = '❌ Masquer QR Code';
+        } catch (error) {
+            console.error('Erreur génération QR:', error);
+            alert('Erreur lors de la génération du QR Code');
+        }
+    } else {
+        // Masquer
+        qrContainer.classList.add('hidden');
+        btn.innerHTML = '<span>📱</span><span>Générer QR Code</span>';
+    }
 }

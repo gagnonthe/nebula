@@ -367,3 +367,103 @@ function showNotification(message, type = 'success') {
         notification.classList.add('hidden');
     }, 3000);
 }
+
+// QR Code Scanner
+let qrStream = null;
+
+document.getElementById('qrScanBtn')?.addEventListener('click', openQrScanner);
+document.getElementById('closeQrScanner')?.addEventListener('click', closeQrScanner);
+
+async function openQrScanner() {
+    const modal = document.getElementById('qrScannerModal');
+    const video = document.getElementById('qrVideo');
+    const canvas = document.getElementById('qrCanvas');
+    const status = document.getElementById('qrStatus');
+    
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    
+    try {
+        // Demander l'accès à la caméra
+        qrStream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: 'environment' } 
+        });
+        
+        video.srcObject = qrStream;
+        video.style.display = 'block';
+        canvas.style.display = 'none';
+        status.textContent = 'Pointez vers le QR Code...';
+        
+        await video.play();
+        
+        // Scanner le QR code
+        scanQrCode(video, canvas);
+    } catch (error) {
+        console.error('Erreur caméra:', error);
+        status.textContent = 'Impossible d\'accéder à la caméra';
+        status.style.color = '#dc2626';
+    }
+}
+
+function closeQrScanner() {
+    const modal = document.getElementById('qrScannerModal');
+    const video = document.getElementById('qrVideo');
+    
+    if (qrStream) {
+        qrStream.getTracks().forEach(track => track.stop());
+        qrStream = null;
+    }
+    
+    video.srcObject = null;
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+}
+
+function scanQrCode(video, canvas) {
+    const ctx = canvas.getContext('2d');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    const scan = () => {
+        if (!qrStream) return;
+        
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        
+        // Détecter QR code (implémentation simplifiée)
+        const qrCode = detectQrCode(imageData);
+        
+        if (qrCode) {
+            // QR Code détecté !
+            handleQrCodeDetected(qrCode);
+        } else {
+            requestAnimationFrame(scan);
+        }
+    };
+    
+    requestAnimationFrame(scan);
+}
+
+function detectQrCode(imageData) {
+    // Implémentation simplifiée : chercher des patterns de QR
+    // Dans une vraie app, utiliser jsQR ou une bibliothèque similaire
+    // Pour l'instant, retournons null (pas de détection)
+    // TODO: Intégrer jsQR
+    return null;
+}
+
+function handleQrCodeDetected(url) {
+    closeQrScanner();
+    
+    // Vérifier que l'URL est valide
+    try {
+        new URL(url);
+        
+        // Mettre à jour l'API_URL
+        if (confirm(`Se connecter à ce serveur ?\n${url}`)) {
+            window.location.href = url;
+        }
+    } catch (error) {
+        showNotification('QR Code invalide', 'error');
+    }
+}
