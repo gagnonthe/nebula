@@ -138,6 +138,11 @@ function setupUpload() {
     const fileInput = document.getElementById('fileInput');
     const uploadArea = document.getElementById('uploadArea');
 
+    if (!fileInput || !uploadArea) {
+        console.error('Éléments d\'upload non trouvés');
+        return;
+    }
+
     fileInput.addEventListener('change', handleFileSelect);
 
     // Drag & Drop

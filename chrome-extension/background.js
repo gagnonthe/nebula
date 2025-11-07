@@ -1,4 +1,7 @@
 // Service worker pour l'extension Chrome
+// Charger Socket.IO une seule fois au début
+importScripts('lib/socket.io.min.js');
+
 let socket = null;
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 5;
@@ -28,9 +31,6 @@ function connectToServer(serverUrl, deviceId) {
   }
   
   try {
-    // Charger Socket.IO depuis le fichier local
-    importScripts('lib/socket.io.min.js');
-    
     socket = io(serverUrl, {
       transports: ['websocket', 'polling'],
       reconnection: true,
