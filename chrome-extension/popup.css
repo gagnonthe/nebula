@@ -140,9 +140,10 @@ button:active {
     margin-bottom: 0.25rem;
 }
 
-.file-info, .device-info {
+.file-meta, .file-info, .device-info, .device-type {
     font-size: 0.625rem;
     color: #6b7280;
+    margin-top: 0.25rem;
 }
 
 .file-actions {
@@ -155,6 +156,54 @@ button:active {
     flex: 1;
     padding: 0.25rem;
     font-size: 0.625rem;
+}
+
+/* Button variants */
+.btn-primary {
+    background: #f3f4f6 !important;
+    border-color: #d1d5db !important;
+}
+
+.btn-primary:hover {
+    background: #e5e7eb !important;
+}
+
+.btn-secondary {
+    background: #fff !important;
+    border-color: #d1d5db !important;
+}
+
+.btn-danger {
+    background: #fef2f2 !important;
+    border-color: #fecaca !important;
+    color: #dc2626 !important;
+}
+
+.btn-danger:hover {
+    background: #fee2e2 !important;
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    color: #9ca3af;
+    font-size: 0.75rem;
+    padding: 1rem;
+}
+
+/* Device item layout */
+.device-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.device-icon {
+    font-size: 1.5rem;
+}
+
+.device-info {
+    flex: 1;
 }
 
 /* Selected file display */

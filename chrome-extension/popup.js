@@ -50,12 +50,23 @@ function generateDeviceId() {
 
 // Configuration des événements
 function setupEventListeners() {
-    document.getElementById('saveConfig').addEventListener('click', saveConfig);
-    document.getElementById('selectFile').addEventListener('click', () => {
-        document.getElementById('fileInput').click();
-    });
-    document.getElementById('fileInput').addEventListener('change', handleFileSelect);
-    document.getElementById('refreshFiles').addEventListener('click', loadFiles);
+    const saveConfigBtn = document.getElementById('saveConfig');
+    const selectFileBtn = document.getElementById('selectFile');
+    const fileInput = document.getElementById('fileInput');
+    const refreshFilesBtn = document.getElementById('refreshFiles');
+    
+    if (saveConfigBtn) {
+        saveConfigBtn.addEventListener('click', saveConfig);
+    }
+    if (selectFileBtn && fileInput) {
+        selectFileBtn.addEventListener('click', () => fileInput.click());
+    }
+    if (fileInput) {
+        fileInput.addEventListener('change', handleFileSelect);
+    }
+    if (refreshFilesBtn) {
+        refreshFilesBtn.addEventListener('click', loadFiles);
+    }
 }
 
 // Sauvegarder la configuration
@@ -92,31 +103,45 @@ async function saveConfig() {
 
 // Afficher la section de configuration
 function showConfigSection() {
-    document.getElementById('configSection').style.display = 'block';
-    document.getElementById('uploadSection').style.display = 'none';
-    document.getElementById('filesSection').style.display = 'none';
-    document.getElementById('devicesSection').style.display = 'none';
+    const configSection = document.getElementById('configSection');
+    const uploadSection = document.getElementById('uploadSection');
+    const filesSection = document.getElementById('filesSection');
+    const devicesSection = document.getElementById('devicesSection');
+    
+    if (configSection) configSection.classList.remove('hidden');
+    if (uploadSection) uploadSection.classList.add('hidden');
+    if (filesSection) filesSection.classList.add('hidden');
+    if (devicesSection) devicesSection.classList.add('hidden');
 }
 
 // Afficher l'interface principale
 function showMainInterface() {
-    document.getElementById('configSection').style.display = 'none';
-    document.getElementById('uploadSection').style.display = 'block';
-    document.getElementById('filesSection').style.display = 'block';
-    document.getElementById('devicesSection').style.display = 'block';
+    const configSection = document.getElementById('configSection');
+    const uploadSection = document.getElementById('uploadSection');
+    const filesSection = document.getElementById('filesSection');
+    const devicesSection = document.getElementById('devicesSection');
+    
+    if (configSection) configSection.classList.add('hidden');
+    if (uploadSection) uploadSection.classList.remove('hidden');
+    if (filesSection) filesSection.classList.remove('hidden');
+    if (devicesSection) devicesSection.classList.remove('hidden');
 }
 
 // Mettre à jour le statut
 function updateStatus(online) {
-    const statusDot = document.querySelector('.status-dot');
+    const statusDot = document.getElementById('statusDot');
     const statusText = document.querySelector('.status-text');
     
-    if (online) {
-        statusDot.classList.add('online');
-        statusText.textContent = 'Connecté';
-    } else {
-        statusDot.classList.remove('online');
-        statusText.textContent = 'Déconnecté';
+    if (statusDot && statusText) {
+        if (online) {
+            statusDot.classList.add('online');
+            statusText.classList.add('online');
+            statusText.textContent = 'Connecté';
+        } else {
+            statusDot.classList.remove('online');
+            statusText.classList.remove('online');
+            statusText.textContent = 'Déconnecté';
+        }
     }
 }
 
@@ -178,13 +203,16 @@ async function uploadFile(file) {
     const progressFill = document.getElementById('progressFill');
     const progressText = document.getElementById('progressText');
     
-    progressContainer.style.display = 'block';
+    if (progressContainer) {
+        progressContainer.classList.add('show');
+        progressContainer.style.display = 'block';
+    }
     
     try {
         const xhr = new XMLHttpRequest();
         
         xhr.upload.addEventListener('progress', (e) => {
-            if (e.lengthComputable) {
+            if (e.lengthComputable && progressFill && progressText) {
                 const percent = Math.round((e.loaded / e.total) * 100);
                 progressFill.style.width = percent + '%';
                 progressText.textContent = percent + '%';
@@ -195,10 +223,10 @@ async function uploadFile(file) {
             if (xhr.status === 200) {
                 chrome.notifications.create({
                     type: 'basic',
-                    iconUrl: 'icons/icon48.png',
-                    title: 'File Share',
+                    iconUrl: chrome.runtime.getURL('icons/icon48.png'),
+                    title: 'Nebula',
                     message: 'Fichier envoyé avec succès!'
-                });
+                }).catch(err => console.log('Notification error:', err));
                 
                 cancelUpload();
                 loadFiles();
@@ -206,13 +234,19 @@ async function uploadFile(file) {
                 alert('Erreur lors de l\'envoi');
             }
             
-            progressContainer.style.display = 'none';
-            progressFill.style.width = '0%';
+            if (progressContainer) {
+                progressContainer.style.display = 'none';
+                progressContainer.classList.remove('show');
+            }
+            if (progressFill) progressFill.style.width = '0%';
         });
         
         xhr.addEventListener('error', () => {
             alert('Erreur lors de l\'envoi');
-            progressContainer.style.display = 'none';
+            if (progressContainer) {
+                progressContainer.style.display = 'none';
+                progressContainer.classList.remove('show');
+            }
         });
         
         xhr.open('POST', `${serverUrl}/api/upload`);
@@ -220,7 +254,10 @@ async function uploadFile(file) {
     } catch (error) {
         console.error('Erreur upload:', error);
         alert('Erreur lors de l\'envoi');
-        progressContainer.style.display = 'none';
+        if (progressContainer) {
+            progressContainer.style.display = 'none';
+            progressContainer.classList.remove('show');
+        }
     }
 }
 
