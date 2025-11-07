@@ -1,0 +1,28 @@
+# Render Deployment Configuration
+
+## render.yaml
+version: 1
+
+services:
+  - type: web
+    name: nebula
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MAX_FILE_SIZE
+        value: 10485760
+      - key: ALLOWED_ORIGINS
+        value: "*"
+    healthCheckPath: /api/health
+    
+    # Auto-deploy on push
+    autoDeploy: true
+    
+    # Disque persistant pour les uploads (optionnel)
+    # Note: Le plan gratuit de Render ne persiste pas les fichiers
+    # Les fichiers seront perdus au redémarrage du service
+    # Pour persister, utilisez un stockage externe (S3, etc.)

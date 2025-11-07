@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Share</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+        <div class="wrapper">
+            <header class="px-3 py-2 border-b border-gray-200 bg-white flex items-center justify-between">
+            <h1 class="text-sm font-semibold">Nebula</h1>
+                <div class="flex items-center gap-1 text-xs" id="status">
+                    <span class="inline-block w-2 h-2 rounded-full bg-gray-300" id="statusDot"></span>
+                    <span class="status-text text-gray-600">Déconnecté</span>
+                </div>
+            </header>
+            <main class="p-3 space-y-4">
+                <section id="configSection" class="space-y-2">
+                    <h2 class="text-xs font-medium tracking-wide text-gray-700">Configuration</h2>
+                    <label class="block">
+                        <span class="sr-only">URL du serveur</span>
+                        <input type="text" id="serverUrl" class="w-full rounded border border-gray-300 px-2 py-1 text-xs" placeholder="https://votre-serveur.onrender.com" />
+                    </label>
+                    <button id="saveConfig" class="w-full rounded border border-gray-300 bg-white px-2 py-1 text-xs hover:bg-gray-50">Sauvegarder</button>
+                </section>
+
+                <section id="uploadSection" class="space-y-2 hidden">
+                    <h2 class="text-xs font-medium tracking-wide text-gray-700">Upload</h2>
+                    <input type="file" id="fileInput" hidden />
+                    <button id="selectFile" class="w-full rounded border border-gray-300 bg-white px-2 py-1 text-xs hover:bg-gray-50">Choisir un fichier</button>
+                    <div id="selectedFile" class="hidden rounded border border-gray-200 p-2 text-xs bg-gray-50"></div>
+                    <div id="uploadProgress" class="hidden space-y-1">
+                        <div class="h-2 w-full rounded bg-gray-200 overflow-hidden">
+                            <div id="progressFill" class="h-full w-0 bg-gray-700"></div>
+                        </div>
+                        <div id="progressText" class="text-[10px] text-gray-500">0%</div>
+                    </div>
+                </section>
+
+                <section id="filesSection" class="space-y-2 hidden">
+                    <h2 class="text-xs font-medium tracking-wide text-gray-700">Fichiers</h2>
+                    <div id="filesList" class="space-y-2 max-h-48 overflow-auto">
+                        <p class="text-center text-gray-400 text-xs py-4">Aucun fichier disponible</p>
+                    </div>
+                    <button id="refreshFiles" class="w-full rounded border border-gray-300 bg-white px-2 py-1 text-xs hover:bg-gray-50">Actualiser</button>
+                </section>
+
+                <section id="devicesSection" class="space-y-2 hidden">
+                    <h2 class="text-xs font-medium tracking-wide text-gray-700">Appareils</h2>
+                    <div id="devicesList" class="space-y-2 max-h-40 overflow-auto">
+                        <p class="text-center text-gray-400 text-xs py-4">Aucun appareil</p>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>

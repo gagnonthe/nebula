@@ -1,0 +1,28 @@
+{
+  "name": "nebula",
+  "version": "1.0.0",
+  "description": "Nebula — Partage de fichiers entre iPhone (PWA) et PC (Extension Chrome)",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "nodemon server/index.js",
+    "build": "echo 'Build completed'"
+  },
+  "keywords": ["nebula", "file-sharing", "pwa", "chrome-extension"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "multer": "^1.4.5-lts.1",
+    "socket.io": "^4.6.1",
+    "uuid": "^9.0.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
