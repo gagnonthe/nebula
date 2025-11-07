@@ -62,7 +62,7 @@ nebula/
 4. **Variables d'environnement** (auto-configurées via render.yaml)
    - `NODE_ENV=production`
    - `PORT` (auto-assigné par Render)
-   - `MAX_FILE_SIZE=104857600` (100MB)
+   - `MAX_FILE_SIZE=1073741824` (1GB)
    - `ALLOWED_ORIGINS=*`
 
 5. **Déployer**
@@ -114,7 +114,7 @@ Le serveur démarre sur `http://localhost:3000`
 
 ## 📡 Fonctionnalités
 
-- ✅ Upload de fichiers (max 100MB)
+- ✅ Upload de fichiers (max 1GB)
 - ✅ Téléchargement depuis n'importe quel appareil
 - ✅ Notifications temps réel (WebSocket)
 - ✅ Liste des appareils connectés

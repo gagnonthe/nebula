@@ -1,30 +1,30 @@
 # Configuration de la taille maximale des fichiers
 
-## ⚙️ Limite actuelle : **100 MB**
+## ⚙️ Limite actuelle : **1 GB**
 
-La taille maximale des fichiers uploadables a été augmentée de **10 MB** à **100 MB**.
+La taille maximale des fichiers uploadables a été augmentée de **10 MB** → **100 MB** → **1 GB**.
 
 ## 📋 Fichiers modifiés
 
 ### 1. Serveur (server/index.js)
 ```javascript
-fileSize: parseInt(process.env.MAX_FILE_SIZE) || 104857600 // 100MB par défaut
+fileSize: parseInt(process.env.MAX_FILE_SIZE) || 1073741824 // 1GB par défaut
 ```
 
 ### 2. Configuration environnement (.env.example)
 ```bash
-MAX_FILE_SIZE=104857600  # 100 MB en bytes
+MAX_FILE_SIZE=1073741824  # 1 GB en bytes
 ```
 
 ### 3. Configuration Render (render.yaml)
 ```yaml
 - key: MAX_FILE_SIZE
-  value: 104857600
+  value: 1073741824
 ```
 
 ### 4. Interface PWA (public/index.html)
 ```html
-<p class="text-xs text-gray-400">Max 100 Mo</p>
+<p class="text-xs text-gray-400">Max 1 Go</p>
 ```
 
 ## 🎯 Comment modifier la limite
@@ -65,9 +65,10 @@ MAX_FILE_SIZE=104857600  # 100 MB en bytes
 |--------|-------|------|
 | 10 MB | 10,485,760 | Limite initiale |
 | 50 MB | 52,428,800 | Petit fichier |
-| 100 MB | 104,857,600 | **Limite actuelle** |
-| 500 MB | 524,288,000 | Fichier moyen |
-| 1 GB | 1,073,741,824 | Gros fichier |
+| 100 MB | 104,857,600 | Fichier moyen |
+| 500 MB | 524,288,000 | Gros fichier |
+| 1 GB | 1,073,741,824 | **Limite actuelle** |
+| 2 GB | 2,147,483,648 | Très gros fichier |
 
 ## ⚠️ Considérations importantes
 
@@ -78,9 +79,10 @@ MAX_FILE_SIZE=104857600  # 100 MB en bytes
 - ⚠️ Fichiers perdus au redémarrage du serveur
 
 ### Recommandations
-- **< 100 MB** : Optimal pour le plan gratuit
-- **100-500 MB** : Possible mais peut être lent
-- **> 500 MB** : Risque de timeout, non recommandé
+- **< 100 MB** : Rapide et fiable
+- **100-500 MB** : Bon pour la plupart des cas
+- **500 MB - 1 GB** : Possible mais peut prendre du temps
+- **> 1 GB** : Risque de timeout sur plan gratuit
 
 ### Pour des fichiers très lourds (> 1 GB)
 Considérer :
@@ -94,7 +96,7 @@ Considérer :
 ### Local
 ```bash
 # Mettre à jour .env
-MAX_FILE_SIZE=104857600
+MAX_FILE_SIZE=1073741824
 
 # Redémarrer le serveur
 npm run dev
@@ -106,7 +108,7 @@ Les changements sont automatiquement appliqués via `render.yaml` lors du procha
 ## 🧪 Tester
 
 1. Ouvrir l'application : `https://nebula-a50x.onrender.com`
-2. Essayer d'uploader un fichier de 50-100 MB
+2. Essayer d'uploader un fichier de 100-500 MB
 3. Vérifier que l'upload fonctionne sans erreur "File too large"
 
 ## 📊 Performances attendues
@@ -117,5 +119,6 @@ Les changements sont automatiquement appliqués via `render.yaml` lors du procha
 | 50 MB | ~15 secondes | ~5 secondes |
 | 100 MB | ~30 secondes | ~10 secondes |
 | 500 MB | ~2.5 minutes | ~50 secondes |
+| 1 GB | ~5 minutes | ~1.5 minutes |
 
 *Ces temps sont approximatifs et dépendent de la connexion et de la charge du serveur.*
