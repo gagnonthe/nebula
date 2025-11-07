@@ -28,8 +28,8 @@ function connectToServer(serverUrl, deviceId) {
   }
   
   try {
-    // Charger Socket.IO depuis le CDN
-    importScripts('https://cdn.socket.io/4.5.4/socket.io.min.js');
+    // Charger Socket.IO depuis le fichier local
+    importScripts('lib/socket.io.min.js');
     
     socket = io(serverUrl, {
       transports: ['websocket', 'polling'],
