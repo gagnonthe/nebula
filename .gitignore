@@ -5,11 +5,18 @@ uploads/
 .DS_Store
 dist/
 build/
+
 # Portable/local Node runtimes (exclude from repo)
 .portable/
 node-portable/
+
 # Generated placeholder icons can be regenerated
 public/icons/
 chrome-extension/icons/
+
 # Ignore PowerShell download artifacts
 *.zip
+
+# OS
+Thumbs.db
+.vscode/

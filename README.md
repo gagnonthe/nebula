@@ -1,237 +1,143 @@
-# 🌌 Nebula
+# Nebula 🌌
 
-Nebula est un système minimaliste de partage de fichiers temps réel entre iPhone (PWA) et PC (Extension Chrome), conçu pour être déployé facilement sur Render.
+Système de partage de fichiers en temps réel entre iPhone (PWA) et PC (Extension Chrome) via Render.
 
-## � Palette Nebula (sélection)
-| Usage | Nom | Hex |
-|-------|-----|-----|
-| Accent primaire | DeepPink | `#FF1493` |
-| Accent secondaire | MediumVioletRed | `#C71585` |
-| Accent doux / fond léger | PaleVioletRed | `#DB7093` |
+## 📁 Structure du projet
 
-Ces couleurs sont volontairement utilisées avec parcimonie (barres de progression, indicateurs d'état) pour garder une interface épurée.
-
-
-## �🌟 Fonctionnalités
-
-- ✅ Upload/téléchargement de fichiers (max 10MB)
-- ✅ Synchronisation temps réel via WebSocket
-- ✅ PWA pour iPhone avec support offline
-- ✅ Extension Chrome pour PC
-- ✅ Liste des appareils connectés
-- ✅ Notifications en temps réel
-- ✅ Auto-suppression des fichiers après 1 heure
-
-## 🚀 Déploiement sur Render
-
-### 1. Créer un compte Render
-Allez sur [render.com](https://render.com) et créez un compte gratuit.
-
-### 2. Déployer le serveur
-
-1. Cliquez sur "New +" → "Web Service"
-2. Connectez votre repository GitHub
-3. Configurez le service:
-   - **Name**: file-share-system
-   - **Environment**: Node
-   - **Build Command**: `npm install`
-   - **Start Command**: `npm start`
-   - **Plan**: Free
-
-4. Variables d'environnement:
-   ```
-   NODE_ENV=production
-   PORT=3000
-   MAX_FILE_SIZE=10485760
-   ALLOWED_ORIGINS=*
-   ```
-
-5. Cliquez sur "Create Web Service"
-
-### 3. Récupérer l'URL
-Une fois déployé, vous obtiendrez une URL comme:
 ```
-https://file-share-system-xxxx.onrender.com
-```
-
-## 📱 Installation PWA (iPhone)
-
-1. Ouvrez Safari sur votre iPhone
-2. Accédez à l'URL de votre serveur Render
-3. Cliquez sur le bouton "Partager" 📤
-4. Sélectionnez "Sur l'écran d'accueil"
-5. Nommez l'app "Nebula" et ajoutez
-
-L'application sera maintenant disponible comme une app native sur votre iPhone!
-
-## 💻 Installation Extension Chrome (PC)
-
-1. Ouvrez Chrome et accédez à `chrome://extensions/`
-2. Activez le "Mode développeur" (en haut à droite)
-3. Cliquez sur "Charger l'extension non empaquetée"
-4. Sélectionnez le dossier `chrome-extension`
-5. L'extension est maintenant installée!
-
-### Configuration de l'extension:
-1. Cliquez sur l'icône de l'extension
-2. Entrez l'URL de votre serveur Render
-3. Cliquez sur "Sauvegarder"
-
-## 🎯 Utilisation
-
-### Depuis l'iPhone (PWA):
-1. Ouvrez l'app Nebula
-2. Cliquez sur "Choisir un fichier" ou glissez-déposez
-3. Le fichier sera uploadé et disponible sur tous vos appareils
-
-### Depuis le PC (Extension Chrome):
-1. Cliquez sur l'icône de l'extension
-2. Cliquez sur "Choisir un fichier"
-3. Sélectionnez le fichier à partager
-4. Cliquez sur "Envoyer"
-
-### Télécharger un fichier:
-- Sur n'importe quel appareil, cliquez sur "Télécharger" à côté du fichier
-- Le fichier sera téléchargé sur votre appareil
-
-## 🔧 Développement local
-
-### Prérequis
-- Node.js >= 18.0.0
-- npm
-
-### Installation
-```powershell
-# Installer les dépendances
-npm install
-
-# Copier le fichier d'environnement
-Copy-Item .env.example .env
-
-# Lancer le serveur en mode développement
-npm run dev
-```
-
-Le serveur sera accessible sur `http://localhost:3000`
-
-### Structure du projet
-```
-files/
-├── server/
-│   └── index.js           # Serveur Express avec WebSocket
-├── public/
-│   ├── index.html         # Interface PWA
-│   ├── manifest.json      # Manifest PWA
-│   ├── sw.js             # Service Worker
-│   ├── css/
-│   │   └── style.css     # Styles PWA
-│   └── js/
-│       └── app.js        # Logic PWA
-├── chrome-extension/
-│   ├── manifest.json     # Manifest Extension
-│   ├── popup.html        # Interface Extension
-│   ├── popup.css         # Styles Extension
-│   ├── popup.js          # Logic Extension
-│   └── background.js     # Service Worker Extension
+nebula/
+├── server/              # Backend Node.js/Express
+│   └── index.js        # API REST + WebSocket
+├── public/             # PWA (Progressive Web App)
+│   ├── index.html      # Interface principale
+│   ├── manifest.json   # Configuration PWA
+│   ├── sw.js          # Service Worker
+│   ├── js/app.js      # Logique client
+│   └── css/style.css  # Styles
+├── chrome-extension/   # Extension Chrome (MV3)
+│   ├── manifest.json   # Configuration extension
+│   ├── popup.html/css/js
+│   └── background.js   # Service Worker extension
+├── scripts/           # Scripts utilitaires
+│   ├── portable-setup-and-run.ps1
+│   └── create-placeholder-icons.ps1
+├── docs/             # Documentation
+│   ├── INSTALL.md
+│   ├── DEMARRAGE.md
+│   └── ICONS.md
 ├── package.json
+├── render.yaml       # Configuration Render
 └── README.md
 ```
 
-## 🔒 Sécurité
+## 🚀 Déploiement sur Render
 
-⚠️ **Important**: Ce système est conçu pour un usage personnel/développement.
+### Prérequis
+- Compte GitHub
+- Compte Render (gratuit)
 
-Pour la production, ajoutez:
-- Authentification des utilisateurs
-- Chiffrement des fichiers
-- Limites de taux (rate limiting)
-- Base de données persistante
-- Stockage cloud (S3, etc.)
-- HTTPS obligatoire
+### Étapes
 
-## 📝 API Endpoints
+1. **Push du code sur GitHub** (déjà fait ✅)
+   ```bash
+   git push -u origin main
+   ```
 
-### Santé du serveur
+2. **Connecter Render à GitHub**
+   - Aller sur [render.com](https://render.com)
+   - Se connecter avec GitHub
+   - Autoriser l'accès au repo `gagnonthe/nebula`
+
+3. **Créer le Web Service**
+   - Cliquer sur "New +" → "Web Service"
+   - Sélectionner le repo `nebula`
+   - Render détectera automatiquement `render.yaml`
+   - Ou configuration manuelle :
+     - **Name**: nebula
+     - **Runtime**: Node
+     - **Build Command**: `npm ci`
+     - **Start Command**: `npm start`
+     - **Plan**: Free
+
+4. **Variables d'environnement** (auto-configurées via render.yaml)
+   - `NODE_ENV=production`
+   - `PORT` (auto-assigné par Render)
+   - `MAX_FILE_SIZE=10485760` (10MB)
+   - `ALLOWED_ORIGINS=*`
+
+5. **Déployer**
+   - Cliquer sur "Create Web Service"
+   - Attendre le build (~2-3 min)
+   - Récupérer l'URL : `https://nebula-xxxx.onrender.com`
+
+## 📱 Configuration PWA (iPhone)
+
+1. Ouvrir Safari sur iPhone
+2. Aller sur `https://nebula-xxxx.onrender.com`
+3. Appuyer sur le bouton Partage
+4. "Ajouter à l'écran d'accueil"
+5. L'app Nebula est installée !
+
+## 💻 Configuration Extension Chrome (PC)
+
+1. Ouvrir Chrome
+2. Aller dans `chrome://extensions/`
+3. Activer "Mode développeur" (en haut à droite)
+4. "Charger l'extension non empaquetée"
+5. Sélectionner le dossier `chrome-extension/`
+6. Dans l'extension, configurer l'URL du serveur : `https://nebula-xxxx.onrender.com`
+
+## 🎨 Palette Nebula
+
+| Couleur | Hex | Usage |
+|---------|-----|-------|
+| DeepPink | `#FF1493` | Accents principaux (barres de progression) |
+| MediumVioletRed | `#C71585` | Accents secondaires (hover, focus) |
+| PaleVioletRed | `#DB7093` | Accents tertiaires (backgrounds légers) |
+
+Les couleurs sont appliquées avec parcimonie sur un design neutre (gris/blanc).
+
+## 🔧 Développement local
+
+### Windows (sans admin)
+```powershell
+.\scripts\portable-setup-and-run.ps1
 ```
-GET /api/health
+
+### Avec Node.js installé
+```bash
+npm install
+npm run dev
 ```
 
-### Enregistrer un appareil
-```
-POST /api/device/register
-Body: { deviceId, deviceName, deviceType }
-```
+Le serveur démarre sur `http://localhost:3000`
 
-### Upload un fichier
-```
-POST /api/upload
-FormData: { file, deviceId, targetDevice }
-```
+## 📡 Fonctionnalités
 
-### Liste des fichiers
-```
-GET /api/files?deviceId={deviceId}
-```
+- ✅ Upload de fichiers (max 10MB)
+- ✅ Téléchargement depuis n'importe quel appareil
+- ✅ Notifications temps réel (WebSocket)
+- ✅ Liste des appareils connectés
+- ✅ Nettoyage automatique (fichiers > 24h)
+- ✅ PWA installable sur iPhone
+- ✅ Extension Chrome avec notifications
+- ✅ Design minimal et neutre
 
-### Télécharger un fichier
-```
-GET /api/download/:fileId
-```
+## 📝 Notes
 
-### Supprimer un fichier
-```
-DELETE /api/files/:fileId
-```
+- **Stockage temporaire** : Les fichiers sont stockés sur le disque du serveur Render (plan gratuit = non persistant au redémarrage)
+- **Sécurité** : En production, configurer `ALLOWED_ORIGINS` avec les domaines autorisés
+- **Limites Render Free** :
+  - Service s'endort après 15 min d'inactivité
+  - Premier accès après sommeil peut prendre 30-60s
+  - Fichiers perdus au redémarrage
 
-### Liste des appareils
-```
-GET /api/devices
-```
+## 🔗 Liens utiles
 
-## 🔌 WebSocket Events
+- [Documentation Render](https://render.com/docs)
+- [PWA Guide](https://web.dev/progressive-web-apps/)
+- [Chrome Extension Docs](https://developer.chrome.com/docs/extensions/)
 
-### Client → Serveur
-- `register-device`: Enregistrer un appareil
+---
 
-### Serveur → Client
-- `file-uploaded`: Nouveau fichier uploadé
-- `file-deleted`: Fichier supprimé
-- `device-connected`: Nouvel appareil connecté
-- `device-disconnected`: Appareil déconnecté
-
-## 🎨 Icônes
-
-Pour l'extension Chrome et la PWA, vous devrez créer des icônes aux tailles suivantes:
-- 16x16, 32x32, 48x48, 128x128 (Extension Chrome)
-- 72x72, 96x96, 128x128, 144x144, 152x152, 192x192, 384x384, 512x512 (PWA)
-
-Vous pouvez utiliser un service en ligne comme [favicon.io](https://favicon.io) pour générer les icônes.
-
-## 🐛 Dépannage
-
-### Le serveur ne démarre pas
-- Vérifiez que Node.js >= 18 est installé: `node --version`
-- Vérifiez que les dépendances sont installées: `npm install`
-- Vérifiez le fichier `.env`
-
-### La PWA ne s'installe pas
-- Utilisez HTTPS (requis pour les PWA)
-- Vérifiez que le manifest.json est accessible
-- Vérifiez la console développeur pour les erreurs
-
-### L'extension Chrome ne fonctionne pas
-- Vérifiez que l'URL du serveur est correcte
-- Vérifiez les permissions dans manifest.json
-- Rechargez l'extension depuis chrome://extensions/
-
-## 📄 Licence
-
-MIT
-
-## 👤 Auteur
-
-Votre nom
-
-## 🤝 Contribution
-
-Les contributions sont les bienvenues! N'hésitez pas à ouvrir une issue ou une pull request.
+Made with 💖 by [gagnonthe](https://github.com/gagnonthe)

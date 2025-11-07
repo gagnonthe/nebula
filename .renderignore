@@ -1,0 +1,12 @@
+# Files to ignore during Render deployment
+.env
+.git/
+.gitignore
+.portable/
+node-portable/
+scripts/
+docs/DEMARRAGE.md
+docs/INSTALL.md
+chrome-extension/
+*.ps1
+README.md
