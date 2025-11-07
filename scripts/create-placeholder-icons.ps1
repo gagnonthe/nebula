@@ -20,7 +20,7 @@ function Create-PlaceholderIcon {
     }
 }
 
-$basePath = Split-Path -Parent $PSCommandPath
+$basePath = Split-Path -Parent $PSCommandPath | Split-Path -Parent
 
 # PWA Icons
 $pwaPath = Join-Path $basePath "public\icons"

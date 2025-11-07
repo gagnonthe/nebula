@@ -1,6 +1,15 @@
 // Service worker pour l'extension Chrome
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('Extension File Share installée');
+  console.log('Extension Nebula installée');
+  
+  // Définir l'URL par défaut du serveur
+  chrome.storage.sync.get(['serverUrl'], (result) => {
+    if (!result.serverUrl) {
+      chrome.storage.sync.set({ 
+        serverUrl: 'https://nebula-a50x.onrender.com'
+      });
+    }
+  });
 });
 
 // Gérer les notifications
@@ -12,13 +21,13 @@ chrome.notifications.onClicked.addListener((notificationId) => {
 // Écouter les messages depuis le popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'FILE_UPLOADED') {
-    // Afficher une notification
+    // Afficher une notification (sans icône pour éviter l'erreur)
     chrome.notifications.create({
       type: 'basic',
-      iconUrl: 'icons/icon48.png',
+      iconUrl: chrome.runtime.getURL('icons/icon48.png'),
       title: 'Nouveau fichier',
       message: `Fichier reçu: ${request.filename}`
-    });
+    }).catch(err => console.log('Notification error:', err));
   }
   
   sendResponse({ success: true });
@@ -58,10 +67,10 @@ async function checkForNewFiles() {
     if (newFiles.length > 0) {
       chrome.notifications.create({
         type: 'basic',
-        iconUrl: 'icons/icon48.png',
+        iconUrl: chrome.runtime.getURL('icons/icon48.png'),
         title: 'Nouveaux fichiers',
         message: `${newFiles.length} nouveau(x) fichier(s) disponible(s)`
-      });
+      }).catch(err => console.log('Notification error:', err));
     }
     
     chrome.storage.sync.set({ lastCheck: now });

@@ -23,9 +23,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function loadConfig() {
     return new Promise((resolve) => {
         chrome.storage.sync.get(['serverUrl', 'deviceId'], (result) => {
-            serverUrl = result.serverUrl || '';
+            serverUrl = result.serverUrl || 'https://nebula-a50x.onrender.com';
             deviceId = result.deviceId || generateDeviceId();
             isConfigured = !!serverUrl;
+            
+            // Sauvegarder l'URL par défaut si elle n'existe pas
+            if (!result.serverUrl) {
+                chrome.storage.sync.set({ serverUrl });
+            }
             
             if (serverUrl) {
                 document.getElementById('serverUrl').value = serverUrl;
