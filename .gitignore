@@ -10,10 +10,6 @@ build/
 .portable/
 node-portable/
 
-# Generated placeholder icons can be regenerated
-public/icons/
-chrome-extension/icons/
-
 # Ignore PowerShell download artifacts
 *.zip
 
