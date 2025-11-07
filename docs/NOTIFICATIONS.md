@@ -20,10 +20,11 @@ L'extension Chrome Nebula utilise maintenant **Socket.IO** pour recevoir des not
 
 ### Background Service Worker
 Le fichier `background.js` :
-1. Se connecte au serveur Socket.IO au démarrage de l'extension
-2. S'enregistre comme appareil auprès du serveur
-3. Écoute l'événement `file-uploaded` en temps réel
-4. Affiche une notification Chrome native quand un nouveau fichier arrive
+1. Charge Socket.IO depuis `lib/socket.io.min.js` (local, conforme CSP)
+2. Se connecte au serveur Socket.IO au démarrage de l'extension
+3. S'enregistre comme appareil auprès du serveur
+4. Écoute l'événement `file-uploaded` en temps réel
+5. Affiche une notification Chrome native quand un nouveau fichier arrive
 
 ### Format de Notification
 ```javascript
