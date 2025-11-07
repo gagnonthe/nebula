@@ -116,12 +116,14 @@ Le serveur démarre sur `http://localhost:3000`
 
 - ✅ Upload de fichiers (max 1GB)
 - ✅ Téléchargement depuis n'importe quel appareil
-- ✅ Notifications temps réel (WebSocket)
+- ✅ **Notifications temps réel** (Socket.IO WebSocket)
+- ✅ **Notifications Chrome instantanées** lors de nouveaux uploads
 - ✅ Liste des appareils connectés
 - ✅ Nettoyage automatique (fichiers > 24h)
 - ✅ PWA installable sur iPhone
-- ✅ Extension Chrome avec notifications
+- ✅ Extension Chrome avec notifications natives
 - ✅ Design minimal et neutre
+- ✅ Interface responsive (mobile/tablet/desktop)
 
 ## 📝 Notes
 

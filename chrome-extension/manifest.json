@@ -6,8 +6,7 @@
   "permissions": [
     "storage",
     "notifications",
-    "downloads",
-    "alarms"
+    "downloads"
   ],
   "host_permissions": [
     "http://localhost:3000/*",
