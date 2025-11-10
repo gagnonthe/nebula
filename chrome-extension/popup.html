@@ -8,58 +8,57 @@
 </head>
 <body>
         <div class="wrapper">
-            <header class="px-3 py-2 border-b border-gray-200 bg-white flex items-center justify-between">
-            <h1 class="text-sm font-semibold">Nebula</h1>
-                <div class="flex items-center gap-1 text-xs" id="status">
-                    <span class="inline-block w-2 h-2 rounded-full bg-gray-300" id="statusDot"></span>
-                    <span class="status-text text-gray-600">Déconnecté</span>
+            <header class="header">
+                <h1 class="title">Nebula</h1>
+                <div class="status-badge" id="status">
+                    <span class="status-dot" id="statusDot"></span>
+                    <span class="status-text">Déconnecté</span>
                 </div>
             </header>
-            <main class="p-3 space-y-4">
-                <section id="configSection" class="space-y-2">
-                    <h2 class="text-xs font-medium tracking-wide text-gray-700">Configuration</h2>
-                    <label class="block">
-                        <span class="sr-only">URL du serveur</span>
-                        <input type="text" id="serverUrl" class="w-full rounded border border-gray-300 px-2 py-1 text-xs" placeholder="https://votre-serveur.onrender.com" />
-                    </label>
-                    <button id="saveConfig" class="w-full rounded border border-gray-300 bg-white px-2 py-1 text-xs hover:bg-gray-50">Sauvegarder</button>
+            <main class="main">
+                <section id="configSection" class="section">
+                    <h2 class="section-title">⚙️ Configuration</h2>
+                    <input type="text" id="serverUrl" class="input" placeholder="https://votre-serveur.onrender.com" />
+                    <button id="saveConfig" class="btn btn-primary">Sauvegarder</button>
                 </section>
 
-                <section id="pairingSection" class="space-y-2">
-                    <h2 class="text-xs font-medium tracking-wide text-gray-700">Appairage rapide (QR)</h2>
-                    <div class="rounded border border-gray-200 p-2 bg-gray-50 flex flex-col items-center gap-2">
-                        <div id="qrContainer" class="bg-white p-2 rounded border border-gray-200"></div>
-                        <button id="refreshQr" class="w-full rounded border border-gray-300 bg-white px-2 py-1 text-xs hover:bg-gray-50">Régénérer QR</button>
-                        <button id="copyServerUrl" class="w-full rounded border border-gray-300 bg-white px-2 py-1 text-xs hover:bg-gray-50">Copier URL serveur</button>
-                        <p class="text-[10px] text-gray-500 text-center">Scannez ce code depuis la PWA sur iPhone pour configurer l'URL automatiquement.</p>
-                    </div>
-                </section>
-
-                <section id="uploadSection" class="space-y-2 hidden">
-                    <h2 class="text-xs font-medium tracking-wide text-gray-700">Upload</h2>
-                    <input type="file" id="fileInput" hidden />
-                    <button id="selectFile" class="w-full rounded border border-gray-300 bg-white px-2 py-1 text-xs hover:bg-gray-50">Choisir un fichier</button>
-                    <div id="selectedFile" class="hidden rounded border border-gray-200 p-2 text-xs bg-gray-50"></div>
-                    <div id="uploadProgress" class="hidden space-y-1">
-                        <div class="h-2 w-full rounded bg-gray-200 overflow-hidden">
-                            <div id="progressFill" class="h-full w-0 bg-gray-700"></div>
+                <section id="pairingSection" class="section">
+                    <h2 class="section-title">📱 Appairage rapide</h2>
+                    <div class="qr-card">
+                        <div id="qrContainer" class="qr-wrapper"></div>
+                        <div class="qr-actions">
+                            <button id="refreshQr" class="btn btn-secondary">🔄 Régénérer</button>
+                            <button id="copyServerUrl" class="btn btn-secondary">📋 Copier URL</button>
                         </div>
-                        <div id="progressText" class="text-[10px] text-gray-500">0%</div>
+                        <p class="qr-hint">Scannez depuis l'iPhone pour configurer automatiquement</p>
                     </div>
                 </section>
 
-                <section id="filesSection" class="space-y-2 hidden">
-                    <h2 class="text-xs font-medium tracking-wide text-gray-700">Fichiers</h2>
-                    <div id="filesList" class="space-y-2 max-h-48 overflow-auto">
-                        <p class="text-center text-gray-400 text-xs py-4">Aucun fichier disponible</p>
+                <section id="uploadSection" class="section hidden">
+                    <h2 class="section-title">📤 Upload</h2>
+                    <input type="file" id="fileInput" hidden />
+                    <button id="selectFile" class="btn btn-primary">Choisir un fichier</button>
+                    <div id="selectedFile" class="selected-file hidden"></div>
+                    <div id="uploadProgress" class="progress-container hidden">
+                        <div class="progress-bar">
+                            <div id="progressFill" class="progress-fill"></div>
+                        </div>
+                        <div id="progressText" class="progress-text">0%</div>
                     </div>
-                    <button id="refreshFiles" class="w-full rounded border border-gray-300 bg-white px-2 py-1 text-xs hover:bg-gray-50">Actualiser</button>
                 </section>
 
-                <section id="devicesSection" class="space-y-2 hidden">
-                    <h2 class="text-xs font-medium tracking-wide text-gray-700">Appareils</h2>
-                    <div id="devicesList" class="space-y-2 max-h-40 overflow-auto">
-                        <p class="text-center text-gray-400 text-xs py-4">Aucun appareil</p>
+                <section id="filesSection" class="section hidden">
+                    <h2 class="section-title">📁 Fichiers</h2>
+                    <div id="filesList" class="files-list">
+                        <p class="empty-state">Aucun fichier disponible</p>
+                    </div>
+                    <button id="refreshFiles" class="btn btn-secondary">🔄 Actualiser</button>
+                </section>
+
+                <section id="devicesSection" class="section hidden">
+                    <h2 class="section-title">🖥️ Appareils</h2>
+                    <div id="devicesList" class="devices-list">
+                        <p class="empty-state">Aucun appareil</p>
                     </div>
                 </section>
             </main>
