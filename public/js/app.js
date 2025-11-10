@@ -1,3 +1,11 @@
+// Ensure the app initializes only once and avoid global redeclaration conflicts
+;(function () {
+    if (window.__NEBULA_APP_INIT__) {
+        console.debug('Nebula app already initialized, skipping re-init');
+        return;
+    }
+    window.__NEBULA_APP_INIT__ = true;
+
 // Configuration
 const API_URL = window.location.origin;
 let socket;
@@ -491,13 +499,15 @@ function showNotification(message, type = 'success') {
 
     // Admin access button
     document.getElementById('adminAccessBtn')?.addEventListener('click', () => {
-        document.getElementById('pinModal').classList.remove('hidden');
+        const modal = document.getElementById('pinModal');
+        if (modal) modal.classList.remove('hidden');
     });
 
     // PIN modal close
     document.querySelectorAll('.modal-close').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            e.target.closest('.modal').classList.add('hidden');
+            const modal = e.target.closest('.modal');
+            if (modal) modal.classList.add('hidden');
         });
     });
 
@@ -719,3 +729,5 @@ function showNotification(message, type = 'success') {
     // Make functions globally available
     window.generateShareLink = generateShareLink;
     window.deleteAdminFile = deleteAdminFile;
+
+    })();
