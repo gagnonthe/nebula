@@ -6,6 +6,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
+const archiver = require('archiver');
 require('dotenv').config();
 
 const app = express();
@@ -79,45 +80,124 @@ app.post('/api/device/register', (req, res) => {
   });
 });
 
-// Upload de fichier
-app.post('/api/upload', upload.single('file'), (req, res) => {
+// Upload de fichier(s) avec support ZIP pour dossiers
+app.post('/api/upload', upload.array('files', 500), async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
+    const uploadedFiles = req.files;
+    
+    if (!uploadedFiles || uploadedFiles.length === 0) {
+      return res.status(400).json({ error: 'No files uploaded' });
     }
 
-    const { deviceId, targetDevice } = req.body;
-    const fileId = uuidv4();
+    const { deviceId, targetDevice, folderName, isFolder } = req.body;
     
-    const fileData = {
-      id: fileId,
-      filename: req.file.originalname,
-      storedName: req.file.filename,
-      size: req.file.size,
-      mimetype: req.file.mimetype,
-      uploadedBy: deviceId || 'anonymous',
-      targetDevice: targetDevice || 'all',
-      uploadedAt: new Date(),
-      path: req.file.path
-    };
+    // Si c'est un dossier, créer un ZIP
+    if (isFolder === 'true' && uploadedFiles.length > 1) {
+      const zipFileName = `${folderName || 'folder'}_${Date.now()}.zip`;
+      const zipFilePath = path.join(UPLOAD_DIR, zipFileName);
+      const fileId = uuidv4();
+      
+      // Créer l'archive ZIP
+      const output = fs.createWriteStream(zipFilePath);
+      const archive = archiver('zip', { zlib: { level: 9 } });
+      
+      output.on('close', () => {
+        console.log(`ZIP créé: ${archive.pointer()} bytes`);
+        
+        // Sauvegarder les métadonnées du ZIP
+        const fileData = {
+          id: fileId,
+          filename: zipFileName,
+          storedName: zipFileName,
+          size: archive.pointer(),
+          mimetype: 'application/zip',
+          uploadedBy: deviceId || 'anonymous',
+          targetDevice: targetDevice || 'all',
+          uploadedAt: new Date(),
+          path: zipFilePath,
+          isZip: true,
+          originalFileCount: uploadedFiles.length
+        };
+        
+        files.set(fileId, fileData);
+        
+        // Supprimer les fichiers individuels temporaires
+        uploadedFiles.forEach(file => {
+          fs.unlink(file.path, err => {
+            if (err) console.error('Erreur suppression fichier temp:', err);
+          });
+        });
+        
+        // Notifier via WebSocket
+        io.emit('file-uploaded', {
+          fileId,
+          filename: fileData.filename,
+          size: fileData.size,
+          uploadedBy: fileData.uploadedBy,
+          targetDevice: fileData.targetDevice,
+          isZip: true
+        });
+        
+        res.json({
+          success: true,
+          fileId,
+          filename: fileData.filename,
+          downloadUrl: `/api/download/${fileId}`,
+          isZip: true,
+          fileCount: uploadedFiles.length
+        });
+      });
+      
+      archive.on('error', (err) => {
+        console.error('Erreur création ZIP:', err);
+        res.status(500).json({ error: 'ZIP creation failed' });
+      });
+      
+      archive.pipe(output);
+      
+      // Ajouter chaque fichier au ZIP avec son chemin relatif
+      uploadedFiles.forEach(file => {
+        const relativePath = req.body[`relativePath_${file.originalname}`] || file.originalname;
+        archive.file(file.path, { name: relativePath });
+      });
+      
+      await archive.finalize();
+      
+    } else {
+      // Upload fichier(s) individuel(s) sans ZIP
+      const fileId = uuidv4();
+      const file = uploadedFiles[0];
+      
+      const fileData = {
+        id: fileId,
+        filename: file.originalname,
+        storedName: file.filename,
+        size: file.size,
+        mimetype: file.mimetype,
+        uploadedBy: deviceId || 'anonymous',
+        targetDevice: targetDevice || 'all',
+        uploadedAt: new Date(),
+        path: file.path
+      };
 
-    files.set(fileId, fileData);
+      files.set(fileId, fileData);
 
-    // Notifier via WebSocket
-    io.emit('file-uploaded', {
-      fileId,
-      filename: fileData.filename,
-      size: fileData.size,
-      uploadedBy: fileData.uploadedBy,
-      targetDevice: fileData.targetDevice
-    });
+      // Notifier via WebSocket
+      io.emit('file-uploaded', {
+        fileId,
+        filename: fileData.filename,
+        size: fileData.size,
+        uploadedBy: fileData.uploadedBy,
+        targetDevice: fileData.targetDevice
+      });
 
-    res.json({
-      success: true,
-      fileId,
-      filename: fileData.filename,
-      downloadUrl: `/api/download/${fileId}`
-    });
+      res.json({
+        success: true,
+        fileId,
+        filename: fileData.filename,
+        downloadUrl: `/api/download/${fileId}`
+      });
+    }
   } catch (error) {
     console.error('Upload error:', error);
     res.status(500).json({ error: 'Upload failed' });

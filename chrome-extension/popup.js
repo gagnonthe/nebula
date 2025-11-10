@@ -231,36 +231,108 @@ async function uploadMultipleFiles(files) {
         progressContainer.style.display = 'block';
     }
     
-    let uploadedCount = 0;
-    const totalFiles = files.length;
+    // Détecter si c'est un dossier (tous les fichiers ont webkitRelativePath)
+    const isFolder = files.length > 1 && files[0].webkitRelativePath;
+    const folderName = isFolder ? files[0].webkitRelativePath.split('/')[0] : null;
     
-    for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        
+    if (isFolder) {
+        // Upload en tant que ZIP
         if (progressText) {
-            progressText.textContent = `Envoi ${i + 1}/${totalFiles}: ${file.name}`;
+            progressText.textContent = `Création du ZIP pour "${folderName}"...`;
         }
         
         try {
-            await uploadFile(file, (percent) => {
-                const overallPercent = Math.round(((i + percent / 100) / totalFiles) * 100);
-                if (progressFill) progressFill.style.width = overallPercent + '%';
+            await uploadAsZip(files, folderName, (percent) => {
+                if (progressFill) progressFill.style.width = percent + '%';
+                if (progressText) progressText.textContent = `ZIP: ${percent}%`;
             });
-            uploadedCount++;
+            
+            chrome.notifications.create({
+                type: 'basic',
+                iconUrl: chrome.runtime.getURL('icons/icon48.png'),
+                title: 'Nebula',
+                message: `Dossier "${folderName}" envoyé (${files.length} fichiers en ZIP)`
+            }).catch(err => console.log('Notification error:', err));
         } catch (error) {
-            console.error('Erreur upload:', file.name, error);
+            console.error('Erreur upload ZIP:', error);
+            alert('Erreur lors de l\'envoi du dossier');
         }
+    } else {
+        // Upload fichiers individuels
+        let uploadedCount = 0;
+        const totalFiles = files.length;
+        
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            
+            if (progressText) {
+                progressText.textContent = `Envoi ${i + 1}/${totalFiles}: ${file.name}`;
+            }
+            
+            try {
+                await uploadFile(file, (percent) => {
+                    const overallPercent = Math.round(((i + percent / 100) / totalFiles) * 100);
+                    if (progressFill) progressFill.style.width = overallPercent + '%';
+                });
+                uploadedCount++;
+            } catch (error) {
+                console.error('Erreur upload:', file.name, error);
+            }
+        }
+        
+        chrome.notifications.create({
+            type: 'basic',
+            iconUrl: chrome.runtime.getURL('icons/icon48.png'),
+            title: 'Nebula',
+            message: `${uploadedCount}/${totalFiles} fichier(s) envoyé(s) avec succès!`
+        }).catch(err => console.log('Notification error:', err));
     }
-    
-    chrome.notifications.create({
-        type: 'basic',
-        iconUrl: chrome.runtime.getURL('icons/icon48.png'),
-        title: 'Nebula',
-        message: `${uploadedCount}/${totalFiles} fichier(s) envoyé(s) avec succès!`
-    }).catch(err => console.log('Notification error:', err));
     
     cancelUpload();
     loadFiles();
+}
+
+// Upload comme ZIP (pour dossiers)
+async function uploadAsZip(files, folderName, progressCallback) {
+    return new Promise((resolve, reject) => {
+        const formData = new FormData();
+        
+        // Ajouter tous les fichiers
+        files.forEach((file, index) => {
+            formData.append('files', file);
+            // Ajouter le chemin relatif pour chaque fichier
+            formData.append(`relativePath_${file.name}`, file.webkitRelativePath || file.name);
+        });
+        
+        formData.append('deviceId', deviceId);
+        formData.append('targetDevice', 'all');
+        formData.append('isFolder', 'true');
+        formData.append('folderName', folderName);
+        
+        const xhr = new XMLHttpRequest();
+        
+        xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable && progressCallback) {
+                const percent = Math.round((e.loaded / e.total) * 100);
+                progressCallback(percent);
+            }
+        });
+        
+        xhr.addEventListener('load', () => {
+            if (xhr.status === 200) {
+                resolve();
+            } else {
+                reject(new Error('Upload failed'));
+            }
+        });
+        
+        xhr.addEventListener('error', () => {
+            reject(new Error('Network error'));
+        });
+        
+        xhr.open('POST', `${serverUrl}/api/upload`);
+        xhr.send(formData);
+    });
 }
 
 // Annuler l'upload
