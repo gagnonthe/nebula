@@ -22,18 +22,6 @@
                     <button id="saveConfig" class="btn btn-primary">Sauvegarder</button>
                 </section>
 
-                <section id="pairingSection" class="section">
-                    <h2 class="section-title">📱 Appairage rapide</h2>
-                    <div class="qr-card">
-                        <div id="qrContainer" class="qr-wrapper"></div>
-                        <div class="qr-actions">
-                            <button id="refreshQr" class="btn btn-secondary">🔄 Régénérer</button>
-                            <button id="copyServerUrl" class="btn btn-secondary">📋 Copier URL</button>
-                        </div>
-                        <p class="qr-hint">Scannez depuis l'iPhone pour configurer automatiquement</p>
-                    </div>
-                </section>
-
                 <section id="uploadSection" class="section hidden">
                     <h2 class="section-title">📤 Upload</h2>
                     <input type="file" id="fileInput" hidden />
@@ -63,7 +51,6 @@
                 </section>
             </main>
         </div>
-    <script src="lib/qrcode.min.js"></script>
     <script src="popup.js"></script>
 </body>
 </html>

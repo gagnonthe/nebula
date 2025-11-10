@@ -144,43 +144,6 @@ body {
     background: #e5e7eb;
 }
 
-/* QR Card */
-.qr-card {
-    background: linear-gradient(135deg, #f8f9ff 0%, #faf5ff 100%);
-    border-radius: 12px;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-}
-
-.qr-wrapper {
-    background: white;
-    padding: 12px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.qr-actions {
-    display: flex;
-    gap: 8px;
-    width: 100%;
-}
-
-.qr-actions .btn {
-    flex: 1;
-    font-size: 12px;
-    padding: 8px 12px;
-}
-
-.qr-hint {
-    font-size: 11px;
-    color: #6b7280;
-    text-align: center;
-    line-height: 1.4;
-}
-
 /* Progress */
 .progress-container {
     margin-top: 12px;
