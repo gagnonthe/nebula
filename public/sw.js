@@ -1,9 +1,10 @@
-const CACHE_NAME = 'file-share-v1';
+const CACHE_NAME = 'file-share-v2';
 const urlsToCache = [
   '/',
   '/index.html',
   '/css/style.css',
   '/js/app.js',
+  '/js/vendor/jsQR.js',
   '/manifest.json'
 ];
 

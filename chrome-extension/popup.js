@@ -8,6 +8,7 @@ let isConfigured = false;
 document.addEventListener('DOMContentLoaded', async () => {
     await loadConfig();
     setupEventListeners();
+    renderQrIfPossible();
     
     if (isConfigured) {
         showMainInterface();
@@ -66,6 +67,19 @@ function setupEventListeners() {
     }
     if (refreshFilesBtn) {
         refreshFilesBtn.addEventListener('click', loadFiles);
+    }
+    const refreshQrBtn = document.getElementById('refreshQr');
+    if (refreshQrBtn) {
+        refreshQrBtn.addEventListener('click', renderQrIfPossible);
+    }
+    const copyUrlBtn = document.getElementById('copyServerUrl');
+    if (copyUrlBtn) {
+        copyUrlBtn.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(serverUrl);
+                alert('URL serveur copiée');
+            } catch {}
+        });
     }
 }
 
@@ -231,7 +245,6 @@ async function uploadFile(file) {
                 cancelUpload();
                 loadFiles();
             } else {
-                renderQrIfPossible();
                 alert('Erreur lors de l\'envoi');
             }
             
@@ -275,33 +288,35 @@ async function uploadFile(file) {
     }
 }
 
+// Rendu du QR code pour appairage
+function renderQrIfPossible() {
+    const container = document.getElementById('qrContainer');
+    if (!container || typeof QRCode === 'undefined') {
+        console.warn('QRCode non disponible ou container manquant');
+        return;
+    }
+
+    container.innerHTML = '';
+    const payload = JSON.stringify({
+        t: 'nebula',
+        server: serverUrl,
+        device: deviceId
+    });
+    new QRCode(container, {
+        text: payload,
+        width: 128,
+        height: 128,
+        colorDark: '#111111',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+    });
+}
+
 // Charger les fichiers
 async function loadFiles() {
     try {
         const response = await fetch(`${serverUrl}/api/files?deviceId=${deviceId}`);
         const data = await response.json();
-        
-
-            // Rendu du QR code pour appairage
-            function renderQrIfPossible() {
-                const container = document.getElementById('qrContainer');
-                if (!container || typeof QRCode === 'undefined') return;
-
-                container.innerHTML = '';
-                const payload = JSON.stringify({
-                    t: 'nebula',
-                    server: serverUrl,
-                    device: deviceId
-                });
-                new QRCode(container, {
-                    text: payload,
-                    width: 128,
-                    height: 128,
-                    colorDark: '#111111',
-                    colorLight: '#ffffff',
-                    correctLevel: QRCode.CorrectLevel.M
-                });
-            }
         const filesList = document.getElementById('filesList');
         
         if (data.files.length === 0) {
