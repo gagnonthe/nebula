@@ -117,6 +117,26 @@ body {
     color: var(--gray-300);
 }
 
+.btn-upload {
+    padding: 0.625rem 1.25rem;
+    border: 2px solid var(--primary);
+    background: white;
+    color: var(--primary);
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.875rem;
+    flex: 1;
+}
+
+.btn-upload:hover {
+    background: var(--primary);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow);
+}
+
 .upload-progress {
     margin-top: 1rem;
 }

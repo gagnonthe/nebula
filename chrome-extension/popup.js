@@ -51,19 +51,36 @@ function generateDeviceId() {
 // Configuration des événements
 function setupEventListeners() {
     const saveConfigBtn = document.getElementById('saveConfig');
-    const selectFileBtn = document.getElementById('selectFile');
+    const selectFilesBtn = document.getElementById('selectFiles');
+    const selectFolderBtn = document.getElementById('selectFolder');
     const fileInput = document.getElementById('fileInput');
     const refreshFilesBtn = document.getElementById('refreshFiles');
     
     if (saveConfigBtn) {
         saveConfigBtn.addEventListener('click', saveConfig);
     }
-    if (selectFileBtn && fileInput) {
-        selectFileBtn.addEventListener('click', () => fileInput.click());
+    
+    if (selectFilesBtn && fileInput) {
+        selectFilesBtn.addEventListener('click', () => {
+            fileInput.removeAttribute('webkitdirectory');
+            fileInput.removeAttribute('directory');
+            fileInput.setAttribute('multiple', 'multiple');
+            fileInput.click();
+        });
     }
+    
+    if (selectFolderBtn && fileInput) {
+        selectFolderBtn.addEventListener('click', () => {
+            fileInput.setAttribute('webkitdirectory', 'webkitdirectory');
+            fileInput.setAttribute('directory', 'directory');
+            fileInput.click();
+        });
+    }
+    
     if (fileInput) {
         fileInput.addEventListener('change', handleFileSelect);
     }
+    
     if (refreshFilesBtn) {
         refreshFilesBtn.addEventListener('click', loadFiles);
     }
@@ -167,111 +184,127 @@ async function registerDevice() {
     }
 }
 
-// Sélection de fichier
+// Sélection de fichier(s)
 function handleFileSelect(e) {
-    const file = e.target.files[0];
-    if (file) {
-        const selectedFileDiv = document.getElementById('selectedFile');
-        selectedFileDiv.innerHTML = `
-            <div>📄 ${file.name}</div>
-            <div style="margin-top: 0.5rem;">
-                <button class="btn btn-primary" id="uploadBtn">Envoyer</button>
-                <button class="btn btn-secondary" id="cancelBtn">Annuler</button>
-            </div>
-        `;
-        selectedFileDiv.classList.add('show');
-        
-        document.getElementById('uploadBtn').addEventListener('click', () => uploadFile(file));
-        document.getElementById('cancelBtn').addEventListener('click', cancelUpload);
-    }
-}
-
-// Annuler l'upload
-function cancelUpload() {
-    document.getElementById('fileInput').value = '';
-    document.getElementById('selectedFile').classList.remove('show');
-}
-
-// Upload de fichier
-async function uploadFile(file) {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('deviceId', deviceId);
-    formData.append('targetDevice', 'all');
+    const files = Array.from(e.target.files);
     
+    if (files.length === 0) return;
+    
+    const selectedFilesDiv = document.getElementById('selectedFiles');
+    const totalSize = files.reduce((sum, f) => sum + f.size, 0);
+    const totalSizeMB = (totalSize / 1024 / 1024).toFixed(2);
+    
+    let fileListHTML = '<div style="max-height:120px; overflow-y:auto; margin-bottom:8px;">';
+    files.forEach((file, index) => {
+        const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+        fileListHTML += `<div style="font-size:11px; padding:4px 0; border-bottom:1px solid #e5e7eb;">
+            📄 ${file.webkitRelativePath || file.name} (${sizeMB} MB)
+        </div>`;
+    });
+    fileListHTML += '</div>';
+    
+    selectedFilesDiv.innerHTML = `
+        <div style="font-weight:600; margin-bottom:8px;">
+            ${files.length} fichier(s) sélectionné(s) • Total: ${totalSizeMB} MB
+        </div>
+        ${fileListHTML}
+        <div style="display:flex; gap:8px; margin-top:8px;">
+            <button class="btn btn-primary" id="uploadBtn" style="flex:1;">📤 Envoyer tout</button>
+            <button class="btn btn-secondary" id="cancelBtn" style="flex:1;">❌ Annuler</button>
+        </div>
+    `;
+    selectedFilesDiv.classList.remove('hidden');
+    selectedFilesDiv.classList.add('show');
+    
+    document.getElementById('uploadBtn').addEventListener('click', () => uploadMultipleFiles(files));
+    document.getElementById('cancelBtn').addEventListener('click', cancelUpload);
+}
+
+// Upload multiple files
+async function uploadMultipleFiles(files) {
     const progressContainer = document.getElementById('uploadProgress');
     const progressFill = document.getElementById('progressFill');
     const progressText = document.getElementById('progressText');
     
     if (progressContainer) {
-        progressContainer.classList.add('show');
+        progressContainer.classList.remove('hidden');
         progressContainer.style.display = 'block';
     }
     
-    try {
+    let uploadedCount = 0;
+    const totalFiles = files.length;
+    
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        if (progressText) {
+            progressText.textContent = `Envoi ${i + 1}/${totalFiles}: ${file.name}`;
+        }
+        
+        try {
+            await uploadFile(file, (percent) => {
+                const overallPercent = Math.round(((i + percent / 100) / totalFiles) * 100);
+                if (progressFill) progressFill.style.width = overallPercent + '%';
+            });
+            uploadedCount++;
+        } catch (error) {
+            console.error('Erreur upload:', file.name, error);
+        }
+    }
+    
+    chrome.notifications.create({
+        type: 'basic',
+        iconUrl: chrome.runtime.getURL('icons/icon48.png'),
+        title: 'Nebula',
+        message: `${uploadedCount}/${totalFiles} fichier(s) envoyé(s) avec succès!`
+    }).catch(err => console.log('Notification error:', err));
+    
+    cancelUpload();
+    loadFiles();
+}
+
+// Annuler l'upload
+function cancelUpload() {
+    document.getElementById('fileInput').value = '';
+    const selectedFilesDiv = document.getElementById('selectedFiles');
+    if (selectedFilesDiv) {
+        selectedFilesDiv.classList.add('hidden');
+        selectedFilesDiv.classList.remove('show');
+    }
+}
+
+// Upload de fichier (single - appelé par uploadMultipleFiles)
+async function uploadFile(file, progressCallback) {
+    return new Promise((resolve, reject) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('deviceId', deviceId);
+        formData.append('targetDevice', 'all');
+        
         const xhr = new XMLHttpRequest();
         
         xhr.upload.addEventListener('progress', (e) => {
-            if (e.lengthComputable && progressFill && progressText) {
+            if (e.lengthComputable && progressCallback) {
                 const percent = Math.round((e.loaded / e.total) * 100);
-                progressFill.style.width = percent + '%';
-                progressText.textContent = percent + '%';
+                progressCallback(percent);
             }
         });
         
         xhr.addEventListener('load', () => {
             if (xhr.status === 200) {
-                chrome.notifications.create({
-                    type: 'basic',
-                    iconUrl: chrome.runtime.getURL('icons/icon48.png'),
-                    title: 'Nebula',
-                    message: 'Fichier envoyé avec succès!'
-                }).catch(err => console.log('Notification error:', err));
-                
-                cancelUpload();
-                loadFiles();
+                resolve();
             } else {
-                alert('Erreur lors de l\'envoi');
+                reject(new Error('Upload failed'));
             }
-            
-            if (progressContainer) {
-                progressContainer.style.display = 'none';
-                progressContainer.classList.remove('show');
-            }
-            if (progressFill) progressFill.style.width = '0%';
         });
         
         xhr.addEventListener('error', () => {
-            alert('Erreur lors de l\'envoi');
-            if (progressContainer) {
-                progressContainer.style.display = 'none';
-                const refreshQrBtn = document.getElementById('refreshQr');
-                if (refreshQrBtn) {
-                    refreshQrBtn.addEventListener('click', renderQrIfPossible);
-                }
-                const copyUrlBtn = document.getElementById('copyServerUrl');
-                if (copyUrlBtn) {
-                    copyUrlBtn.addEventListener('click', async () => {
-                        try {
-                            await navigator.clipboard.writeText(serverUrl);
-                            alert('URL serveur copiée');
-                        } catch {}
-                    });
-                }
-                progressContainer.classList.remove('show');
-            }
+            reject(new Error('Network error'));
         });
         
         xhr.open('POST', `${serverUrl}/api/upload`);
         xhr.send(formData);
-    } catch (error) {
-        console.error('Erreur upload:', error);
-        alert('Erreur lors de l\'envoi');
-        if (progressContainer) {
-            progressContainer.style.display = 'none';
-            progressContainer.classList.remove('show');
-        }
-    }
+    });
 }
 
 // Charger les fichiers

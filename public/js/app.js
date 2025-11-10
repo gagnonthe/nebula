@@ -137,10 +137,31 @@ async function registerDevice() {
 function setupUpload() {
     const fileInput = document.getElementById('fileInput');
     const uploadArea = document.getElementById('uploadArea');
+    const selectFilesBtn = document.getElementById('selectFiles');
+    const selectFolderBtn = document.getElementById('selectFolder');
 
     if (!fileInput || !uploadArea) {
         console.error('Éléments d\'upload non trouvés');
         return;
+    }
+
+    // Bouton fichiers
+    if (selectFilesBtn) {
+        selectFilesBtn.addEventListener('click', () => {
+            fileInput.removeAttribute('webkitdirectory');
+            fileInput.removeAttribute('directory');
+            fileInput.setAttribute('multiple', 'multiple');
+            fileInput.click();
+        });
+    }
+
+    // Bouton dossier
+    if (selectFolderBtn) {
+        selectFolderBtn.addEventListener('click', () => {
+            fileInput.setAttribute('webkitdirectory', 'webkitdirectory');
+            fileInput.setAttribute('directory', 'directory');
+            fileInput.click();
+        });
     }
 
     fileInput.addEventListener('change', handleFileSelect);
@@ -158,70 +179,96 @@ function setupUpload() {
     uploadArea.addEventListener('drop', (e) => {
         e.preventDefault();
         uploadArea.classList.remove('dragover');
-        const files = e.dataTransfer.files;
+        const files = Array.from(e.dataTransfer.files);
         if (files.length > 0) {
-            uploadFile(files[0]);
+            uploadMultipleFiles(files);
         }
     });
 }
 
-// Sélection de fichier
+// Sélection de fichier(s)
 function handleFileSelect(e) {
-    const file = e.target.files[0];
-    if (file) {
-        uploadFile(file);
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+        uploadMultipleFiles(files);
     }
 }
 
-// Upload de fichier
-async function uploadFile(file) {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('deviceId', deviceId);
-    formData.append('targetDevice', 'all');
-
+// Upload multiple files
+async function uploadMultipleFiles(files) {
     const progressContainer = document.getElementById('uploadProgress');
     const progressFill = document.getElementById('progressFill');
     const progressText = document.getElementById('progressText');
-
-    progressContainer.classList.remove('hidden');
-    progressFill.style.width = '0%';
-
-    try {
-        const xhr = new XMLHttpRequest();
-
-        xhr.upload.addEventListener('progress', (e) => {
-            if (e.lengthComputable) {
-                const percent = (e.loaded / e.total) * 100;
-                progressFill.style.width = percent + '%';
-                progressText.textContent = `Upload: ${Math.round(percent)}%`;
-            }
-        });
-
-        xhr.addEventListener('load', () => {
-            if (xhr.status === 200) {
-                const response = JSON.parse(xhr.responseText);
-                showNotification('Fichier envoyé avec succès!', 'success');
-                loadFiles();
-                document.getElementById('fileInput').value = '';
-            } else {
-                showNotification('Erreur lors de l\'envoi', 'error');
-            }
-            progressContainer.classList.add('hidden');
-        });
-
-        xhr.addEventListener('error', () => {
-            showNotification('Erreur lors de l\'envoi', 'error');
-            progressContainer.classList.add('hidden');
-        });
-
-        xhr.open('POST', `${API_URL}/api/upload`);
-        xhr.send(formData);
-    } catch (error) {
-        console.error('Erreur upload:', error);
-        showNotification('Erreur lors de l\'envoi', 'error');
+    
+    if (progressContainer) {
+        progressContainer.classList.remove('hidden');
+    }
+    
+    let uploadedCount = 0;
+    const totalFiles = files.length;
+    
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        if (progressText) {
+            progressText.textContent = `Envoi ${i + 1}/${totalFiles}: ${file.webkitRelativePath || file.name}`;
+        }
+        
+        try {
+            await uploadFile(file, (percent) => {
+                const overallPercent = Math.round(((i + percent / 100) / totalFiles) * 100);
+                if (progressFill) progressFill.style.width = overallPercent + '%';
+            });
+            uploadedCount++;
+        } catch (error) {
+            console.error('Erreur upload:', file.name, error);
+        }
+    }
+    
+    showNotification(`${uploadedCount}/${totalFiles} fichier(s) envoyé(s) avec succès!`, 'success');
+    
+    if (progressContainer) {
         progressContainer.classList.add('hidden');
     }
+    if (progressFill) progressFill.style.width = '0%';
+    
+    // Réinitialiser input
+    document.getElementById('fileInput').value = '';
+    loadFiles();
+}
+
+// Upload de fichier (single - utilisé par uploadMultipleFiles)
+async function uploadFile(file, progressCallback) {
+    return new Promise((resolve, reject) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('deviceId', deviceId);
+        formData.append('targetDevice', 'all');
+        
+        const xhr = new XMLHttpRequest();
+        
+        xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable && progressCallback) {
+                const percent = Math.round((e.loaded / e.total) * 100);
+                progressCallback(percent);
+            }
+        });
+        
+        xhr.addEventListener('load', () => {
+            if (xhr.status === 200) {
+                resolve();
+            } else {
+                reject(new Error('Upload failed'));
+            }
+        });
+        
+        xhr.addEventListener('error', () => {
+            reject(new Error('Network error'));
+        });
+        
+        xhr.open('POST', `${API_URL}/api/upload`);
+        xhr.send(formData);
+    });
 }
 
 // Charger les fichiers

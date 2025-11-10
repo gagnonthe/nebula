@@ -233,13 +233,23 @@ body {
     padding: 24px 16px;
 }
 
-.selected-file {
+.selected-file, .selected-files {
     background: #f9fafb;
     padding: 12px;
     border-radius: 8px;
     font-size: 12px;
     margin-top: 10px;
     color: #374151;
+}
+
+.upload-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.upload-buttons .btn {
+    flex: 1;
 }
 
 /* Device items */

@@ -24,9 +24,12 @@
 
                 <section id="uploadSection" class="section hidden">
                     <h2 class="section-title">📤 Upload</h2>
-                    <input type="file" id="fileInput" hidden />
-                    <button id="selectFile" class="btn btn-primary">Choisir un fichier</button>
-                    <div id="selectedFile" class="selected-file hidden"></div>
+                    <input type="file" id="fileInput" multiple webkitdirectory directory hidden />
+                    <div class="upload-buttons">
+                        <button id="selectFiles" class="btn btn-primary">📄 Fichier(s)</button>
+                        <button id="selectFolder" class="btn btn-primary">📁 Dossier</button>
+                    </div>
+                    <div id="selectedFiles" class="selected-files hidden"></div>
                     <div id="uploadProgress" class="progress-container hidden">
                         <div class="progress-bar">
                             <div id="progressFill" class="progress-fill"></div>
