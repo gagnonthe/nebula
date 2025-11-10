@@ -352,16 +352,21 @@
     <header class="sticky-header">
         <div class="container header-content">
             <h1>Nebula</h1>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <button id="qrScanBtn" style="padding: 0.25rem 0.5rem; font-size: 1.25rem; background: none; border: none; cursor: pointer;" title="Scanner QR Code">
-                    📱
-                </button>
-                <span id="device-status" class="status-badge">Déconnecté</span>
-            </div>
+            <span id="device-status" class="status-badge">Déconnecté</span>
         </div>
     </header>
 
     <main class="container">
+        <!-- Pairing / Scanner QR -->
+        <section class="section">
+            <div class="section-header">
+                <h2>Connexion rapide</h2>
+            </div>
+            <div class="section-body">
+                <button id="openQrScanner" class="text-sm" style="padding:0.5rem 0.75rem; border:1px solid #d1d5db; border-radius:0.375rem; background:#fff;">Scanner un QR</button>
+            </div>
+        </section>
+
         <!-- Upload Section -->
         <section class="section">
             <div class="section-header">
@@ -418,8 +423,25 @@
     <!-- Notification Toast -->
     <div id="notification"></div>
 
+    <!-- QR Scanner Modal -->
+    <div id="qrModal" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; z-index:60;">
+        <div style="background:#fff; border-radius:0.5rem; width:min(28rem, 92vw); max-width:28rem; overflow:hidden;">
+            <div style="padding:0.75rem 1rem; border-bottom:1px solid #e5e7eb; display:flex; align-items:center; justify-content:space-between;">
+                <h3 style="font-size:0.95rem; font-weight:600;">Scanner un QR Nebula</h3>
+                <button id="closeQrScanner" style="font-size:0.875rem; border:1px solid #d1d5db; background:#fff; padding:0.25rem 0.5rem; border-radius:0.375rem;">Fermer</button>
+            </div>
+            <div style="padding:1rem;">
+                <video id="qrVideo" style="width:100%; border-radius:0.375rem; background:#000;" playsinline muted></video>
+                <canvas id="qrCanvas" class="hidden"></canvas>
+                <p class="text-xs text-gray-600" style="margin-top:0.5rem;">Pointez la caméra vers le QR de l'extension Orion/Chrome.</p>
+                <div id="qrStatus" class="text-xs text-gray-500" style="margin-top:0.25rem;">Initialisation caméra…</div>
+            </div>
+        </div>
+    </div>
+
     <!-- Socket.IO client -->
     <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/vendor/jsQR.js"></script>
     <script src="/js/app.js"></script>
 </body>
 </html>
@@ -442,22 +464,6 @@
 
     <!-- Toast -->
     <div id="notification" class="hidden fixed top-16 right-4 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm shadow">Notification</div>
-
-    <!-- QR Scanner Modal -->
-    <div id="qrScannerModal" class="hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column;">
-        <div style="background: white; border-radius: 0.5rem; padding: 1.5rem; max-width: 90%; width: 400px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h3 style="font-size: 1rem; font-weight: 600;">Scanner QR Code</h3>
-                <button id="closeQrScanner" style="font-size: 1.5rem; background: none; border: none; cursor: pointer;">×</button>
-            </div>
-            <div style="background: #f3f4f6; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;">
-                <video id="qrVideo" style="width: 100%; border-radius: 0.375rem; display: none;"></video>
-                <canvas id="qrCanvas" style="width: 100%; border-radius: 0.375rem; display: none;"></canvas>
-                <p id="qrStatus" style="text-align: center; color: #6b7280; font-size: 0.875rem;">Initialisation de la caméra...</p>
-            </div>
-            <p style="font-size: 0.75rem; color: #9ca3af; text-align: center;">Scannez le QR Code affiché sur l'extension PC</p>
-        </div>
-    </div>
 
     <!-- Socket.IO client -->
     <script src="/socket.io/socket.io.js"></script>

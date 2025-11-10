@@ -3,6 +3,8 @@ const API_URL = window.location.origin;
 let socket;
 let deviceId = localStorage.getItem('deviceId') || generateDeviceId();
 let deviceName = localStorage.getItem('deviceName') || getDeviceName();
+let qrStream = null;
+let qrScanActive = false;
 
 // Générer un ID d'appareil unique
 function generateDeviceId() {
@@ -163,6 +165,93 @@ function setupUpload() {
             uploadFile(files[0]);
         }
     });
+}
+
+// QR Scanner setup
+document.addEventListener('DOMContentLoaded', () => {
+    const openBtn = document.getElementById('openQrScanner');
+    const closeBtn = document.getElementById('closeQrScanner');
+    if (openBtn) {
+        openBtn.addEventListener('click', startQrScanner);
+    }
+    if (closeBtn) {
+        closeBtn.addEventListener('click', stopQrScanner);
+    }
+});
+
+async function startQrScanner() {
+    const modal = document.getElementById('qrModal');
+    const video = document.getElementById('qrVideo');
+    const statusEl = document.getElementById('qrStatus');
+    if (!modal || !video) return;
+    modal.classList.remove('hidden');
+    statusEl.textContent = 'Demande d\'accès caméra…';
+    try {
+        qrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        video.srcObject = qrStream;
+        await video.play();
+        qrScanActive = true;
+        statusEl.textContent = 'Scan en cours…';
+        scanQrFrame();
+    } catch (e) {
+        statusEl.textContent = 'Accès caméra refusé ou indisponible.';
+        console.error('Caméra erreur', e);
+    }
+}
+
+function stopQrScanner() {
+    const modal = document.getElementById('qrModal');
+    const statusEl = document.getElementById('qrStatus');
+    if (modal) modal.classList.add('hidden');
+    qrScanActive = false;
+    if (qrStream) {
+        qrStream.getTracks().forEach(t => t.stop());
+        qrStream = null;
+    }
+    if (statusEl) statusEl.textContent = 'Scanner arrêté.';
+}
+
+function scanQrFrame() {
+    if (!qrScanActive) return;
+    const video = document.getElementById('qrVideo');
+    const canvas = document.getElementById('qrCanvas');
+    const statusEl = document.getElementById('qrStatus');
+    if (!video || !canvas) return;
+    const ctx = canvas.getContext('2d');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    try {
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        if (window.jsQR) {
+            const code = jsQR(imageData.data, canvas.width, canvas.height);
+            if (code && code.data) {
+                statusEl.textContent = 'QR détecté. Analyse…';
+                handleQrPayload(code.data);
+                stopQrScanner();
+                return;
+            }
+        }
+    } catch (e) {
+        console.warn('Scan error', e);
+    }
+    requestAnimationFrame(scanQrFrame);
+}
+
+function handleQrPayload(raw) {
+    try {
+        const obj = JSON.parse(raw);
+        if (obj && obj.server) {
+            localStorage.setItem('nebulaServerUrl', obj.server);
+            showNotification('Serveur configuré via QR');
+            // Optionnel: recharger pour prendre en compte
+            setTimeout(() => window.location.href = obj.server, 1500);
+        } else {
+            showNotification('QR invalide');
+        }
+    } catch {
+        showNotification('QR non reconnu');
+    }
 }
 
 // Sélection de fichier
@@ -366,104 +455,4 @@ function showNotification(message, type = 'success') {
     setTimeout(() => {
         notification.classList.add('hidden');
     }, 3000);
-}
-
-// QR Code Scanner
-let qrStream = null;
-
-document.getElementById('qrScanBtn')?.addEventListener('click', openQrScanner);
-document.getElementById('closeQrScanner')?.addEventListener('click', closeQrScanner);
-
-async function openQrScanner() {
-    const modal = document.getElementById('qrScannerModal');
-    const video = document.getElementById('qrVideo');
-    const canvas = document.getElementById('qrCanvas');
-    const status = document.getElementById('qrStatus');
-    
-    modal.classList.remove('hidden');
-    modal.style.display = 'flex';
-    
-    try {
-        // Demander l'accès à la caméra
-        qrStream = await navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: 'environment' } 
-        });
-        
-        video.srcObject = qrStream;
-        video.style.display = 'block';
-        canvas.style.display = 'none';
-        status.textContent = 'Pointez vers le QR Code...';
-        
-        await video.play();
-        
-        // Scanner le QR code
-        scanQrCode(video, canvas);
-    } catch (error) {
-        console.error('Erreur caméra:', error);
-        status.textContent = 'Impossible d\'accéder à la caméra';
-        status.style.color = '#dc2626';
-    }
-}
-
-function closeQrScanner() {
-    const modal = document.getElementById('qrScannerModal');
-    const video = document.getElementById('qrVideo');
-    
-    if (qrStream) {
-        qrStream.getTracks().forEach(track => track.stop());
-        qrStream = null;
-    }
-    
-    video.srcObject = null;
-    modal.classList.add('hidden');
-    modal.style.display = 'none';
-}
-
-function scanQrCode(video, canvas) {
-    const ctx = canvas.getContext('2d');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    
-    const scan = () => {
-        if (!qrStream) return;
-        
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        
-        // Détecter QR code (implémentation simplifiée)
-        const qrCode = detectQrCode(imageData);
-        
-        if (qrCode) {
-            // QR Code détecté !
-            handleQrCodeDetected(qrCode);
-        } else {
-            requestAnimationFrame(scan);
-        }
-    };
-    
-    requestAnimationFrame(scan);
-}
-
-function detectQrCode(imageData) {
-    // Implémentation simplifiée : chercher des patterns de QR
-    // Dans une vraie app, utiliser jsQR ou une bibliothèque similaire
-    // Pour l'instant, retournons null (pas de détection)
-    // TODO: Intégrer jsQR
-    return null;
-}
-
-function handleQrCodeDetected(url) {
-    closeQrScanner();
-    
-    // Vérifier que l'URL est valide
-    try {
-        new URL(url);
-        
-        // Mettre à jour l'API_URL
-        if (confirm(`Se connecter à ce serveur ?\n${url}`)) {
-            window.location.href = url;
-        }
-    } catch (error) {
-        showNotification('QR Code invalide', 'error');
-    }
 }

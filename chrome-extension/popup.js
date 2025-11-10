@@ -54,7 +54,6 @@ function setupEventListeners() {
     const selectFileBtn = document.getElementById('selectFile');
     const fileInput = document.getElementById('fileInput');
     const refreshFilesBtn = document.getElementById('refreshFiles');
-    const showQrCodeBtn = document.getElementById('showQrCode');
     
     if (saveConfigBtn) {
         saveConfigBtn.addEventListener('click', saveConfig);
@@ -67,9 +66,6 @@ function setupEventListeners() {
     }
     if (refreshFilesBtn) {
         refreshFilesBtn.addEventListener('click', loadFiles);
-    }
-    if (showQrCodeBtn) {
-        showQrCodeBtn.addEventListener('click', toggleQrCode);
     }
 }
 
@@ -235,6 +231,7 @@ async function uploadFile(file) {
                 cancelUpload();
                 loadFiles();
             } else {
+                renderQrIfPossible();
                 alert('Erreur lors de l\'envoi');
             }
             
@@ -249,6 +246,19 @@ async function uploadFile(file) {
             alert('Erreur lors de l\'envoi');
             if (progressContainer) {
                 progressContainer.style.display = 'none';
+                const refreshQrBtn = document.getElementById('refreshQr');
+                if (refreshQrBtn) {
+                    refreshQrBtn.addEventListener('click', renderQrIfPossible);
+                }
+                const copyUrlBtn = document.getElementById('copyServerUrl');
+                if (copyUrlBtn) {
+                    copyUrlBtn.addEventListener('click', async () => {
+                        try {
+                            await navigator.clipboard.writeText(serverUrl);
+                            alert('URL serveur copiée');
+                        } catch {}
+                    });
+                }
                 progressContainer.classList.remove('show');
             }
         });
@@ -271,6 +281,27 @@ async function loadFiles() {
         const response = await fetch(`${serverUrl}/api/files?deviceId=${deviceId}`);
         const data = await response.json();
         
+
+            // Rendu du QR code pour appairage
+            function renderQrIfPossible() {
+                const container = document.getElementById('qrContainer');
+                if (!container || typeof QRCode === 'undefined') return;
+
+                container.innerHTML = '';
+                const payload = JSON.stringify({
+                    t: 'nebula',
+                    server: serverUrl,
+                    device: deviceId
+                });
+                new QRCode(container, {
+                    text: payload,
+                    width: 128,
+                    height: 128,
+                    colorDark: '#111111',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+            }
         const filesList = document.getElementById('filesList');
         
         if (data.files.length === 0) {
@@ -406,45 +437,4 @@ function formatDate(dateString) {
     if (diff < 3600000) return Math.floor(diff / 60000) + ' min';
     if (diff < 86400000) return Math.floor(diff / 3600000) + ' h';
     return date.toLocaleDateString('fr-FR');
-}
-
-// Gérer l'affichage du QR Code
-function toggleQrCode() {
-    const qrContainer = document.getElementById('qrCodeContainer');
-    const qrCanvas = document.getElementById('qrCodeCanvas');
-    const btn = document.getElementById('showQrCode');
-    
-    if (!qrContainer || !qrCanvas) return;
-    
-    if (qrContainer.classList.contains('hidden')) {
-        // Afficher et générer le QR code
-        const url = document.getElementById('serverUrl').value.trim() || serverUrl;
-        
-        if (!url) {
-            alert('Veuillez d\'abord configurer l\'URL du serveur');
-            return;
-        }
-        
-        // Générer le QR code
-        try {
-            QRCode.toCanvas(qrCanvas, url, {
-                width: 180,
-                margin: 2,
-                color: {
-                    dark: '#000000',
-                    light: '#FFFFFF'
-                }
-            });
-            
-            qrContainer.classList.remove('hidden');
-            btn.textContent = '❌ Masquer QR Code';
-        } catch (error) {
-            console.error('Erreur génération QR:', error);
-            alert('Erreur lors de la génération du QR Code');
-        }
-    } else {
-        // Masquer
-        qrContainer.classList.add('hidden');
-        btn.innerHTML = '<span>📱</span><span>Générer QR Code</span>';
-    }
 }
