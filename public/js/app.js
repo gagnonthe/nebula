@@ -367,6 +367,9 @@ async function loadFiles() {
                     <button class="btn btn-primary" onclick="downloadFile('${file.id}', '${file.filename}')">
                         Télécharger
                     </button>
+                        <button class="btn btn-success" onclick="generateShareLink('${file.id}')">
+                            🔗 Partager
+                        </button>
                     ${file.uploadedBy === deviceId ? `
                         <button class="btn btn-danger" onclick="deleteFile('${file.id}')">
                             Supprimer
@@ -482,3 +485,237 @@ function showNotification(message, type = 'success') {
         notification.classList.add('hidden');
     }, 3000);
 }
+
+    // Admin Panel Functions
+    const ADMIN_PIN = '6956';
+
+    // Admin access button
+    document.getElementById('adminAccessBtn')?.addEventListener('click', () => {
+        document.getElementById('pinModal').classList.remove('hidden');
+    });
+
+    // PIN modal close
+    document.querySelectorAll('.modal-close').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.target.closest('.modal').classList.add('hidden');
+        });
+    });
+
+    // PIN form submit
+    document.getElementById('pinForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const pin = document.getElementById('pinInput').value;
+        const errorMsg = document.getElementById('pinError');
+    
+        if (pin === ADMIN_PIN) {
+            document.getElementById('pinModal').classList.add('hidden');
+            document.getElementById('adminPage').classList.remove('hidden');
+            document.getElementById('pinInput').value = '';
+            errorMsg.classList.add('hidden');
+            await loadAdminData();
+        } else {
+            errorMsg.textContent = '❌ Code incorrect';
+            errorMsg.classList.remove('hidden');
+            document.getElementById('pinInput').value = '';
+        }
+    });
+
+    // Close admin page
+    document.getElementById('closeAdminBtn')?.addEventListener('click', () => {
+        document.getElementById('adminPage').classList.add('hidden');
+    });
+
+    // Load admin data
+    async function loadAdminData() {
+        try {
+            const response = await fetch(`${API_URL}/api/admin/stats`);
+            const data = await response.json();
+        
+            // Update stats
+            document.getElementById('statTotalFiles').textContent = data.totalFiles || 0;
+            document.getElementById('statTotalSize').textContent = formatFileSize(data.totalSize || 0);
+            document.getElementById('statDevices').textContent = data.totalDevices || 0;
+            document.getElementById('statUploads').textContent = data.totalUploads || 0;
+        
+            // Load files list
+            loadAdminFiles(data.files || []);
+        
+            // Load devices list
+            loadAdminDevices(data.devices || []);
+        } catch (error) {
+            console.error('Error loading admin data:', error);
+            showNotification('Erreur lors du chargement des données admin', 'error');
+        }
+    }
+
+    // Load admin files list
+    function loadAdminFiles(files) {
+        const container = document.getElementById('adminFilesList');
+        if (!files || files.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: var(--gray-600);">Aucun fichier</p>';
+            return;
+        }
+    
+        container.innerHTML = files.map(file => `
+            <div class="file-item">
+                <div class="file-info">
+                    <div class="file-icon">${getFileIcon(file.name)}</div>
+                    <div>
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-size">${formatFileSize(file.size)} • ${formatDate(file.uploadDate)}</div>
+                    </div>
+                </div>
+                <div class="file-actions">
+                    <button class="btn btn-sm btn-danger" onclick="deleteAdminFile('${file.id}')">
+                        🗑️ Supprimer
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // Load admin devices list
+    function loadAdminDevices(devices) {
+        const container = document.getElementById('adminDevicesList');
+        if (!devices || devices.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: var(--gray-600);">Aucun appareil</p>';
+            return;
+        }
+    
+        container.innerHTML = devices.map(device => `
+            <div class="file-item">
+                <div class="file-info">
+                    <div class="file-icon">${device.type === 'mobile' ? '📱' : '💻'}</div>
+                    <div>
+                        <div class="file-name">${device.name}</div>
+                        <div class="file-size">ID: ${device.id}</div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // Delete file from admin
+    async function deleteAdminFile(fileId) {
+        if (!confirm('Êtes-vous sûr de vouloir supprimer ce fichier ?')) return;
+    
+        try {
+            const response = await fetch(`${API_URL}/api/files/${fileId}`, {
+                method: 'DELETE'
+            });
+        
+            if (response.ok) {
+                showNotification('Fichier supprimé', 'success');
+                await loadAdminData();
+            } else {
+                throw new Error('Erreur lors de la suppression');
+            }
+        } catch (error) {
+            console.error('Error deleting file:', error);
+            showNotification('Erreur lors de la suppression', 'error');
+        }
+    }
+
+    // Admin actions
+    document.getElementById('deleteOldFilesBtn')?.addEventListener('click', async () => {
+        if (!confirm('Supprimer les fichiers de plus de 7 jours ?')) return;
+    
+        try {
+            const response = await fetch(`${API_URL}/api/admin/cleanup/old`, {
+                method: 'POST'
+            });
+            const data = await response.json();
+            showNotification(`${data.deleted || 0} fichiers supprimés`, 'success');
+            await loadAdminData();
+        } catch (error) {
+            console.error('Error:', error);
+            showNotification('Erreur lors de la suppression', 'error');
+        }
+    });
+
+    document.getElementById('deleteAllFilesBtn')?.addEventListener('click', async () => {
+        if (!confirm('⚠️ ATTENTION ! Supprimer TOUS les fichiers ? Cette action est irréversible !')) return;
+        if (!confirm('Êtes-vous vraiment sûr ? Tous les fichiers seront définitivement supprimés !')) return;
+    
+        try {
+            const response = await fetch(`${API_URL}/api/admin/cleanup/all`, {
+                method: 'POST'
+            });
+            const data = await response.json();
+            showNotification(`${data.deleted || 0} fichiers supprimés`, 'success');
+            await loadAdminData();
+        } catch (error) {
+            console.error('Error:', error);
+            showNotification('Erreur lors de la suppression', 'error');
+        }
+    });
+
+    document.getElementById('exportStatsBtn')?.addEventListener('click', async () => {
+        try {
+            const response = await fetch(`${API_URL}/api/admin/stats`);
+            const data = await response.json();
+        
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `nebula-stats-${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showNotification('Statistiques exportées', 'success');
+        } catch (error) {
+            console.error('Error:', error);
+            showNotification('Erreur lors de l\'export', 'error');
+        }
+    });
+
+    // Share Link Functions
+    let currentShareFileId = null;
+
+    // Generate share link (called from file item)
+    async function generateShareLink(fileId) {
+        currentShareFileId = fileId;
+        const expiration = document.getElementById('shareExpiration').value;
+    
+        try {
+            const response = await fetch(`${API_URL}/api/share/${fileId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ expiration })
+            });
+        
+            const data = await response.json();
+            const shareUrl = `${window.location.origin}/share/${data.shareId}`;
+        
+            document.getElementById('shareUrl').value = shareUrl;
+            document.getElementById('shareLinkModal').classList.remove('hidden');
+        } catch (error) {
+            console.error('Error generating share link:', error);
+            showNotification('Erreur lors de la génération du lien', 'error');
+        }
+    }
+
+    // Copy share link
+    document.getElementById('copyShareBtn')?.addEventListener('click', async () => {
+        const input = document.getElementById('shareUrl');
+        try {
+            await navigator.clipboard.writeText(input.value);
+            showNotification('Lien copié !', 'success');
+        } catch (error) {
+            // Fallback for older browsers
+            input.select();
+            document.execCommand('copy');
+            showNotification('Lien copié !', 'success');
+        }
+    });
+
+    // Regenerate share link with new expiration
+    document.getElementById('shareExpiration')?.addEventListener('change', async () => {
+        if (currentShareFileId) {
+            await generateShareLink(currentShareFileId);
+        }
+    });
+
+    // Make functions globally available
+    window.generateShareLink = generateShareLink;
+    window.deleteAdminFile = deleteAdminFile;

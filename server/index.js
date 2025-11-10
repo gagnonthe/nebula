@@ -52,6 +52,10 @@ app.use(express.static(path.join(__dirname, '../public')));
 // Base de données en mémoire (à remplacer par une vraie DB en production)
 const files = new Map();
 const deviceSessions = new Map();
+const shareLinks = new Map();
+
+// Stats tracking
+let totalUploads = 0;
 
 // Routes API
 app.get('/api/health', (req, res) => {
@@ -90,6 +94,8 @@ app.post('/api/upload', upload.array('files', 500), async (req, res) => {
     }
 
     const { deviceId, targetDevice, folderName, isFolder } = req.body;
+    
+    totalUploads++;
     
     // Si c'est un dossier, créer un ZIP
     if (isFolder === 'true' && uploadedFiles.length > 1) {
@@ -319,6 +325,153 @@ setInterval(() => {
     }
   });
 }, 60 * 60 * 1000);
+
+  // Admin API endpoints
+  app.get('/api/admin/stats', (req, res) => {
+    let totalSize = 0;
+    const filesList = [];
+  
+    files.forEach((file, fileId) => {
+      totalSize += file.size;
+      filesList.push({
+        id: fileId,
+        name: file.filename,
+        size: file.size,
+        uploadDate: file.uploadedAt,
+        deviceId: file.uploadedBy
+      });
+    });
+  
+    const devicesList = [];
+    deviceSessions.forEach((device, deviceId) => {
+      devicesList.push({
+        id: deviceId,
+        name: device.deviceName,
+        type: device.deviceType,
+        lastSeen: device.lastSeen
+      });
+    });
+  
+    res.json({
+      totalFiles: files.size,
+      totalSize: totalSize,
+      totalDevices: deviceSessions.size,
+      totalUploads: totalUploads,
+      files: filesList.sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate)),
+      devices: devicesList
+    });
+  });
+
+  // Delete old files (7+ days)
+  app.post('/api/admin/cleanup/old', (req, res) => {
+    const now = Date.now();
+    const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+    let deleted = 0;
+  
+    files.forEach((file, fileId) => {
+      if (now - new Date(file.uploadedAt).getTime() > SEVEN_DAYS) {
+        try {
+          if (fs.existsSync(file.path)) {
+            fs.unlinkSync(file.path);
+          }
+          files.delete(fileId);
+          io.emit('file-deleted', { fileId });
+          deleted++;
+        } catch (error) {
+          console.error('Error deleting file:', error);
+        }
+      }
+    });
+  
+    res.json({ deleted });
+  });
+
+  // Delete all files
+  app.post('/api/admin/cleanup/all', (req, res) => {
+    let deleted = 0;
+  
+    files.forEach((file, fileId) => {
+      try {
+        if (fs.existsSync(file.path)) {
+          fs.unlinkSync(file.path);
+        }
+        files.delete(fileId);
+        deleted++;
+      } catch (error) {
+        console.error('Error deleting file:', error);
+      }
+    });
+  
+    io.emit('all-files-deleted');
+    res.json({ deleted });
+  });
+
+  // Generate share link
+  app.post('/api/share/:fileId', (req, res) => {
+    const { fileId } = req.params;
+    const { expiration } = req.body;
+  
+    const file = files.get(fileId);
+    if (!file) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+  
+    const shareId = uuidv4().substring(0, 8);
+    let expiresAt = null;
+  
+    if (expiration && expiration !== 'never') {
+      const hours = parseInt(expiration);
+      expiresAt = Date.now() + (hours * 60 * 60 * 1000);
+    }
+  
+    shareLinks.set(shareId, {
+      fileId,
+      createdAt: Date.now(),
+      expiresAt,
+      downloads: 0
+    });
+  
+    res.json({ shareId });
+  });
+
+  // Access shared file
+  app.get('/share/:shareId', (req, res) => {
+    const { shareId } = req.params;
+    const shareLink = shareLinks.get(shareId);
+  
+    if (!shareLink) {
+      return res.status(404).send('Lien de partage introuvable ou expiré');
+    }
+  
+    if (shareLink.expiresAt && Date.now() > shareLink.expiresAt) {
+      shareLinks.delete(shareId);
+      return res.status(410).send('Ce lien de partage a expiré');
+    }
+  
+    const file = files.get(shareLink.fileId);
+    if (!file) {
+      shareLinks.delete(shareId);
+      return res.status(404).send('Fichier introuvable');
+    }
+  
+    shareLink.downloads++;
+  
+    res.download(file.path, file.filename, (err) => {
+      if (err) {
+        console.error('Error downloading file:', err);
+      }
+    });
+  });
+
+  // Cleanup expired share links (every hour)
+  setInterval(() => {
+    const now = Date.now();
+    shareLinks.forEach((link, shareId) => {
+      if (link.expiresAt && now > link.expiresAt) {
+        shareLinks.delete(shareId);
+      }
+    });
+  }, 60 * 60 * 1000);
 
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
