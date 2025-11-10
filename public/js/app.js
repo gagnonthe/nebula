@@ -47,6 +47,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    // Setup QR Scanner buttons
+    const openQrBtn = document.getElementById('openQrScanner');
+    const closeQrBtn = document.getElementById('closeQrScanner');
+    if (openQrBtn) {
+        openQrBtn.addEventListener('click', startQrScanner);
+    }
+    if (closeQrBtn) {
+        closeQrBtn.addEventListener('click', stopQrScanner);
+    }
+
     // Initialiser WebSocket
     initWebSocket();
 
@@ -167,90 +177,146 @@ function setupUpload() {
     });
 }
 
-// QR Scanner setup
-document.addEventListener('DOMContentLoaded', () => {
-    const openBtn = document.getElementById('openQrScanner');
-    const closeBtn = document.getElementById('closeQrScanner');
-    if (openBtn) {
-        openBtn.addEventListener('click', startQrScanner);
-    }
-    if (closeBtn) {
-        closeBtn.addEventListener('click', stopQrScanner);
-    }
-});
-
+// QR Scanner functions
 async function startQrScanner() {
     const modal = document.getElementById('qrModal');
     const video = document.getElementById('qrVideo');
     const statusEl = document.getElementById('qrStatus');
-    if (!modal || !video) return;
+    
+    if (!modal || !video) {
+        console.error('Modal ou vidéo manquant');
+        return;
+    }
+    
+    // Afficher le modal
     modal.classList.remove('hidden');
-    statusEl.textContent = 'Demande d\'accès caméra…';
+    statusEl.textContent = 'Demande d\'accès à la caméra…';
+    
     try {
-        qrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        // Demander l'accès à la caméra (facingMode: environment pour caméra arrière sur mobile)
+        const constraints = {
+            video: {
+                facingMode: { ideal: 'environment' },
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            }
+        };
+        
+        qrStream = await navigator.mediaDevices.getUserMedia(constraints);
         video.srcObject = qrStream;
+        
+        // Attendre que la vidéo soit prête
         await video.play();
+        
         qrScanActive = true;
-        statusEl.textContent = 'Scan en cours…';
-        scanQrFrame();
+        statusEl.textContent = '📷 Scan en cours… Pointez vers le QR code';
+        
+        // Démarrer le scan
+        requestAnimationFrame(scanQrFrame);
     } catch (e) {
-        statusEl.textContent = 'Accès caméra refusé ou indisponible.';
-        console.error('Caméra erreur', e);
+        console.error('Erreur caméra:', e);
+        statusEl.textContent = '❌ Accès caméra refusé ou indisponible';
+        if (e.name === 'NotAllowedError') {
+            statusEl.textContent = '❌ Permission refusée. Autorisez l\'accès à la caméra.';
+        } else if (e.name === 'NotFoundError') {
+            statusEl.textContent = '❌ Aucune caméra trouvée sur cet appareil.';
+        }
     }
 }
 
 function stopQrScanner() {
     const modal = document.getElementById('qrModal');
+    const video = document.getElementById('qrVideo');
     const statusEl = document.getElementById('qrStatus');
+    
     if (modal) modal.classList.add('hidden');
+    
     qrScanActive = false;
+    
+    // Arrêter tous les tracks de la caméra
     if (qrStream) {
-        qrStream.getTracks().forEach(t => t.stop());
+        qrStream.getTracks().forEach(track => {
+            track.stop();
+            console.log('Track caméra arrêté:', track.kind);
+        });
         qrStream = null;
     }
-    if (statusEl) statusEl.textContent = 'Scanner arrêté.';
+    
+    // Réinitialiser la vidéo
+    if (video) {
+        video.srcObject = null;
+    }
+    
+    if (statusEl) statusEl.textContent = '⏹️ Scanner arrêté';
 }
 
 function scanQrFrame() {
     if (!qrScanActive) return;
+    
     const video = document.getElementById('qrVideo');
     const canvas = document.getElementById('qrCanvas');
     const statusEl = document.getElementById('qrStatus');
-    if (!video || !canvas) return;
+    
+    if (!video || !canvas || !video.videoWidth) {
+        // Vidéo pas encore prête, réessayer
+        requestAnimationFrame(scanQrFrame);
+        return;
+    }
+    
     const ctx = canvas.getContext('2d');
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
+    
+    // Dessiner l'image de la vidéo sur le canvas
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
     try {
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        
         if (window.jsQR) {
-            const code = jsQR(imageData.data, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, canvas.width, canvas.height, {
+                inversionAttempts: 'dontInvert'
+            });
+            
             if (code && code.data) {
-                statusEl.textContent = 'QR détecté. Analyse…';
+                statusEl.textContent = '✅ QR détecté ! Traitement…';
+                console.log('QR Code détecté:', code.data);
                 handleQrPayload(code.data);
                 stopQrScanner();
                 return;
             }
+        } else {
+            console.error('jsQR library not loaded');
+            statusEl.textContent = '❌ Bibliothèque QR non chargée';
         }
     } catch (e) {
-        console.warn('Scan error', e);
+        console.warn('Erreur scan:', e);
     }
+    
+    // Continuer le scan
     requestAnimationFrame(scanQrFrame);
 }
 
 function handleQrPayload(raw) {
+    console.log('Traitement QR payload:', raw);
     try {
         const obj = JSON.parse(raw);
-        if (obj && obj.server) {
+        console.log('QR payload décodé:', obj);
+        
+        if (obj && obj.t === 'nebula' && obj.server) {
             localStorage.setItem('nebulaServerUrl', obj.server);
-            showNotification('Serveur configuré via QR');
-            // Optionnel: recharger pour prendre en compte
-            setTimeout(() => window.location.href = obj.server, 1500);
+            showNotification('✅ Serveur configuré : ' + obj.server, 'success');
+            
+            // Rediriger vers le serveur configuré
+            setTimeout(() => {
+                window.location.href = obj.server;
+            }, 1500);
         } else {
-            showNotification('QR invalide');
+            showNotification('❌ QR code Nebula invalide', 'error');
         }
-    } catch {
-        showNotification('QR non reconnu');
+    } catch (e) {
+        console.error('Erreur parsing QR:', e);
+        showNotification('❌ QR code non reconnu', 'error');
     }
 }
 
