@@ -3,64 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Share</title>
+    <title>Nebula</title>
     <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-        <div class="wrapper">
-            <header class="header">
-                <h1 class="title">Nebula</h1>
-                <div class="status-badge" id="status">
-                    <span class="status-dot" id="statusDot"></span>
-                    <span class="status-text">Déconnecté</span>
-                </div>
-            </header>
-            <main class="main">
-                <!-- Bouton pour ouvrir le site -->
-                <section class="section">
-                    <button id="openWebsite" class="btn btn-website">
-                        🌐 Ouvrir Nebula Web
-                    </button>
-                </section>
-
-                <section id="configSection" class="section">
-                    <h2 class="section-title">⚙️ Configuration</h2>
-                    <input type="text" id="serverUrl" class="input" placeholder="https://votre-serveur.onrender.com" />
-                    <button id="saveConfig" class="btn btn-primary">Sauvegarder</button>
-                </section>
-
-                <section id="uploadSection" class="section hidden">
-                    <h2 class="section-title">📤 Upload</h2>
-                    <input type="file" id="fileInput" multiple webkitdirectory directory hidden />
-                    <div class="upload-buttons">
-                        <button id="selectFiles" class="btn btn-primary">📄 Fichier(s)</button>
-                        <button id="selectFolder" class="btn btn-primary">📁 Dossier</button>
-                    </div>
-                    <div id="selectedFiles" class="selected-files hidden"></div>
-                    <div id="uploadProgress" class="progress-container hidden">
-                        <div class="progress-bar">
-                            <div id="progressFill" class="progress-fill"></div>
-                        </div>
-                        <div id="progressText" class="progress-text">0%</div>
-                    </div>
-                </section>
-
-                <section id="filesSection" class="section hidden">
-                    <h2 class="section-title">📁 Fichiers</h2>
-                    <div id="filesList" class="files-list">
-                        <p class="empty-state">Aucun fichier disponible</p>
-                    </div>
-                    <button id="refreshFiles" class="btn btn-secondary">🔄 Actualiser</button>
-                </section>
-
-                <section id="devicesSection" class="section hidden">
-                    <h2 class="section-title">🖥️ Appareils</h2>
-                    <div id="devicesList" class="devices-list">
-                        <p class="empty-state">Aucun appareil</p>
-                    </div>
-                </section>
-            </main>
+    <!-- Header -->
+    <header class="sticky-header">
+        <div class="header-content">
+            <h1>Nebula</h1>
+            <span id="status" class="status-badge">
+                <span id="statusDot" class="status-dot"></span>
+                <span class="status-text">Déconnecté</span>
+            </span>
         </div>
+    </header>
+
+    <main>
+        <!-- Bouton pour ouvrir le site -->
+        <section class="section">
+            <button id="openWebsite" class="btn btn-website">
+                🌐 Ouvrir Nebula Web
+            </button>
+        </section>
+
+        <!-- Configuration -->
+        <section id="configSection" class="section">
+            <div class="section-header">
+                <h2>⚙️ Configuration</h2>
+            </div>
+            <div class="section-body">
+                <input type="text" id="serverUrl" class="input" placeholder="https://votre-serveur.onrender.com" />
+                <button id="saveConfig" class="btn btn-primary">Sauvegarder</button>
+            </div>
+        </section>
+
+        <!-- Upload -->
+        <section id="uploadSection" class="section hidden">
+            <div class="section-header">
+                <h2>📤 Envoyer un fichier</h2>
+            </div>
+            <div class="section-body">
+                <input type="file" id="fileInput" multiple webkitdirectory directory hidden />
+                <div class="upload-buttons">
+                    <button id="selectFiles" class="btn btn-primary">📄 Fichier(s)</button>
+                    <button id="selectFolder" class="btn btn-primary">📁 Dossier</button>
+                </div>
+                <div id="selectedFiles" class="selected-files hidden"></div>
+                <div id="uploadProgress" class="progress-container hidden">
+                    <div class="progress-bar">
+                        <div id="progressFill" class="progress-fill"></div>
+                    </div>
+                    <div id="progressText" class="progress-text">0%</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Files -->
+        <section id="filesSection" class="section hidden">
+            <div class="section-header">
+                <h2>📁 Fichiers disponibles</h2>
+            </div>
+            <div class="section-body">
+                <div id="filesList" class="file-list">
+                    <p class="empty-state">Aucun fichier disponible</p>
+                </div>
+                <button id="refreshFiles" class="btn btn-secondary">🔄 Actualiser</button>
+            </div>
+        </section>
+
+        <!-- Devices -->
+        <section id="devicesSection" class="section hidden">
+            <div class="section-header">
+                <h2>🖥️ Appareils connectés</h2>
+            </div>
+            <div class="section-body">
+                <div id="devicesList" class="device-list">
+                    <p class="empty-state">Aucun appareil</p>
+                </div>
+            </div>
+        </section>
+    </main>
+    
     <script src="popup.js"></script>
 </body>
 </html>
