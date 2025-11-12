@@ -67,6 +67,40 @@ h1 {
     transform: scale(0.95);
 }
 
+.btn-header-qr {
+    padding: 0.375rem 0.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.15s;
+    width: auto;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-header-qr svg {
+    display: block;
+    color: #374151;
+    transition: color 0.15s;
+}
+
+.btn-header-qr:hover {
+    background: #111827;
+    border-color: #111827;
+    transform: scale(1.05);
+}
+
+.btn-header-qr:hover svg {
+    color: #fff;
+}
+
+.btn-header-qr:active {
+    transform: scale(0.95);
+}
+
 h2 { 
     font-size: 0.875rem; 
     font-weight: 600;
