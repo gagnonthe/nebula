@@ -25,7 +25,57 @@ document.addEventListener('DOMContentLoaded', async () => {
             chrome.tabs.create({ url: 'https://nebula-a50x.onrender.com/' });
         });
     }
+    
+    // Ajouter le gestionnaire pour le bouton QR code
+    const showQRBtn = document.getElementById('showQRCode');
+    if (showQRBtn) {
+        showQRBtn.addEventListener('click', showQRCodeModal);
+    }
+    
+    // Fermer le modal QR code
+    const closeQRBtn = document.getElementById('closeQRModal');
+    if (closeQRBtn) {
+        closeQRBtn.addEventListener('click', closeQRCodeModal);
+    }
+    
+    // Fermer le modal en cliquant sur le fond
+    const qrModal = document.getElementById('qrModal');
+    if (qrModal) {
+        qrModal.addEventListener('click', (e) => {
+            if (e.target === qrModal) {
+                closeQRCodeModal();
+            }
+        });
+    }
 });
+
+// Afficher le modal avec le QR code
+function showQRCodeModal() {
+    const modal = document.getElementById('qrModal');
+    const qrcodeContainer = document.getElementById('qrcode');
+    
+    // Vider le conteneur
+    qrcodeContainer.innerHTML = '';
+    
+    // Générer le QR code
+    const qrcode = new QRCode(qrcodeContainer, {
+        text: 'https://nebula-a50x.onrender.com/',
+        width: 200,
+        height: 200,
+        colorDark: '#111827',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H
+    });
+    
+    // Afficher le modal
+    modal.classList.remove('hidden');
+}
+
+// Fermer le modal QR code
+function closeQRCodeModal() {
+    const modal = document.getElementById('qrModal');
+    modal.classList.add('hidden');
+}
 
 // Charger la configuration
 async function loadConfig() {

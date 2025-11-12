@@ -14,12 +14,30 @@
             <button id="openWebsite" class="btn-header-web" title="Ouvrir Nebula Web">
                 🌐
             </button>
+            <button id="showQRCode" class="btn-header-web" title="QR Code du site">
+                📱
+            </button>
             <span id="status" class="status-badge">
                 <span id="statusDot" class="status-dot"></span>
                 <span class="status-text">Déconnecté</span>
             </span>
         </div>
     </header>
+
+    <!-- QR Code Modal -->
+    <div id="qrModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>QR Code - Nebula</h2>
+                <button id="closeQRModal" class="btn-close">✕</button>
+            </div>
+            <div class="modal-body">
+                <div id="qrcode" class="qr-container"></div>
+                <p class="qr-text">Scannez pour accéder à Nebula</p>
+                <p class="qr-url">https://nebula-a50x.onrender.com/</p>
+            </div>
+        </div>
+    </div>
 
     <main>
         <!-- Configuration -->
@@ -80,6 +98,7 @@
         </section>
     </main>
     
+    <script src="lib/qrcode.min.js"></script>
     <script src="popup.js"></script>
 </body>
 </html>
