@@ -17,6 +17,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
         showConfigSection();
     }
+    
+    // Ajouter le gestionnaire pour le bouton du site
+    const openWebsiteBtn = document.getElementById('openWebsite');
+    if (openWebsiteBtn) {
+        openWebsiteBtn.addEventListener('click', () => {
+            chrome.tabs.create({ url: 'https://nebula-a50x.onrender.com/' });
+        });
+    }
 });
 
 // Charger la configuration
