@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#111827">
+    <title>Fichier partagé - Nebula</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
+    
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #111; 
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            max-width: 48rem;
+            width: 100%;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: #111827;
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+        
+        .header p {
+            font-size: 0.875rem;
+            color: #9ca3af;
+        }
+        
+        .content {
+            padding: 2rem;
+        }
+        
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.5rem;
+            background: #f9fafb;
+            border-radius: 0.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .file-icon {
+            width: 64px;
+            height: 64px;
+            background: #667eea;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            flex-shrink: 0;
+        }
+        
+        .file-details {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .file-name {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #111827;
+            word-break: break-all;
+            margin-bottom: 0.25rem;
+        }
+        
+        .file-meta {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        
+        .preview-container {
+            margin-bottom: 2rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            background: #f9fafb;
+        }
+        
+        .preview-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .preview-container video,
+        .preview-container audio {
+            width: 100%;
+            max-height: 400px;
+        }
+        
+        .preview-container iframe {
+            width: 100%;
+            height: 600px;
+            border: none;
+        }
+        
+        .no-preview {
+            padding: 3rem;
+            text-align: center;
+            color: #9ca3af;
+        }
+        
+        .no-preview-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.15s;
+            text-align: center;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            min-width: 200px;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+        
+        .stats {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+        }
+        
+        .stat {
+            flex: 1;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #111827;
+        }
+        
+        .stat-label {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+        }
+        
+        .error-container {
+            text-align: center;
+            padding: 3rem 2rem;
+        }
+        
+        .error-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        
+        .error-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 0.5rem;
+        }
+        
+        .error-message {
+            color: #6b7280;
+            margin-bottom: 2rem;
+        }
+        
+        @media (max-width: 640px) {
+            .actions {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                min-width: auto;
+            }
+            
+            .stats {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✨ Nebula</h1>
+            <p>Partage de fichiers sécurisé</p>
+        </div>
+        
+        <div id="content" class="content">
+            <div style="text-align: center; padding: 3rem; color: #9ca3af;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">⏳</div>
+                <p>Chargement...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const shareId = window.location.pathname.split('/').pop();
+        
+        async function loadFileInfo() {
+            try {
+                const response = await fetch(`/api/share/${shareId}/info`);
+                
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        showError('Fichier introuvable', 'Ce lien de partage n\'existe pas ou a expiré.');
+                    } else if (response.status === 410) {
+                        showError('Lien expiré', 'Ce lien de partage a expiré.');
+                    } else {
+                        showError('Erreur', 'Une erreur est survenue lors du chargement du fichier.');
+                    }
+                    return;
+                }
+                
+                const data = await response.json();
+                displayFile(data);
+            } catch (error) {
+                console.error('Error loading file:', error);
+                showError('Erreur de connexion', 'Impossible de charger le fichier. Veuillez réessayer.');
+            }
+        }
+        
+        function displayFile(data) {
+            const { filename, size, uploadedAt, downloads, expiresAt, mimeType } = data;
+            
+            const content = document.getElementById('content');
+            
+            const icon = getFileIcon(filename, mimeType);
+            const formattedSize = formatBytes(size);
+            const formattedDate = new Date(uploadedAt).toLocaleDateString('fr-FR', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            let expiryInfo = '';
+            if (expiresAt) {
+                const expiryDate = new Date(expiresAt);
+                const now = new Date();
+                const hoursLeft = Math.max(0, Math.floor((expiryDate - now) / (1000 * 60 * 60)));
+                expiryInfo = `<div style="background: #fef3c7; color: #92400e; padding: 0.75rem; border-radius: 0.5rem; margin-bottom: 1.5rem; text-align: center; font-size: 0.875rem;">
+                    ⏰ Ce lien expire dans ${hoursLeft} heure(s)
+                </div>`;
+            }
+            
+            content.innerHTML = `
+                ${expiryInfo}
+                
+                <div class="file-info">
+                    <div class="file-icon">${icon}</div>
+                    <div class="file-details">
+                        <div class="file-name">${escapeHtml(filename)}</div>
+                        <div class="file-meta">${formattedSize} • Partagé le ${formattedDate}</div>
+                    </div>
+                </div>
+                
+                <div id="preview" class="preview-container">
+                    ${generatePreview(filename, mimeType)}
+                </div>
+                
+                <div class="actions">
+                    <a href="/api/share/${shareId}/download" class="btn btn-primary" download>
+                        📥 Télécharger le fichier
+                    </a>
+                    <button onclick="copyLink()" class="btn btn-secondary">
+                        🔗 Copier le lien
+                    </button>
+                </div>
+                
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-value">${downloads}</div>
+                        <div class="stat-label">Téléchargements</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">${formattedSize}</div>
+                        <div class="stat-label">Taille</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function generatePreview(filename, mimeType) {
+            const ext = filename.split('.').pop().toLowerCase();
+            
+            // Images
+            if (mimeType?.startsWith('image/')) {
+                return `<img src="/api/share/${shareId}/download" alt="${escapeHtml(filename)}" onerror="this.parentElement.innerHTML='${getNoPreview()}'">`;
+            }
+            
+            // Videos
+            if (mimeType?.startsWith('video/')) {
+                return `<video controls>
+                    <source src="/api/share/${shareId}/download" type="${mimeType}">
+                    Votre navigateur ne supporte pas la lecture vidéo.
+                </video>`;
+            }
+            
+            // Audio
+            if (mimeType?.startsWith('audio/')) {
+                return `<div style="padding: 2rem;">
+                    <audio controls style="width: 100%;">
+                        <source src="/api/share/${shareId}/download" type="${mimeType}">
+                        Votre navigateur ne supporte pas la lecture audio.
+                    </audio>
+                </div>`;
+            }
+            
+            // PDF
+            if (mimeType === 'application/pdf' || ext === 'pdf') {
+                return `<iframe src="/api/share/${shareId}/download" type="application/pdf"></iframe>`;
+            }
+            
+            // Text files
+            if (mimeType?.startsWith('text/') || ['txt', 'md', 'json', 'xml', 'csv'].includes(ext)) {
+                return `<div style="padding: 1rem; max-height: 400px; overflow: auto;">
+                    <pre id="textPreview" style="white-space: pre-wrap; word-wrap: break-word; font-family: monospace; font-size: 0.875rem;">Chargement...</pre>
+                </div>`;
+            }
+            
+            return getNoPreview();
+        }
+        
+        function getNoPreview() {
+            return `<div class="no-preview">
+                <div class="no-preview-icon">📄</div>
+                <p>Aperçu non disponible pour ce type de fichier</p>
+                <p style="font-size: 0.875rem; margin-top: 0.5rem;">Téléchargez le fichier pour le consulter</p>
+            </div>`;
+        }
+        
+        function getFileIcon(filename, mimeType) {
+            if (mimeType?.startsWith('image/')) return '🖼️';
+            if (mimeType?.startsWith('video/')) return '🎥';
+            if (mimeType?.startsWith('audio/')) return '🎵';
+            if (mimeType === 'application/pdf') return '📕';
+            if (mimeType?.includes('zip') || mimeType?.includes('compressed')) return '📦';
+            if (mimeType?.startsWith('text/')) return '📝';
+            const ext = filename.split('.').pop().toLowerCase();
+            if (['doc', 'docx'].includes(ext)) return '📘';
+            if (['xls', 'xlsx'].includes(ext)) return '📊';
+            if (['ppt', 'pptx'].includes(ext)) return '📽️';
+            return '📄';
+        }
+        
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function showError(title, message) {
+            const content = document.getElementById('content');
+            content.innerHTML = `
+                <div class="error-container">
+                    <div class="error-icon">❌</div>
+                    <div class="error-title">${escapeHtml(title)}</div>
+                    <div class="error-message">${escapeHtml(message)}</div>
+                    <a href="https://nebula-a50x.onrender.com/" class="btn btn-primary">
+                        🏠 Retour à l'accueil
+                    </a>
+                </div>
+            `;
+        }
+        
+        async function copyLink() {
+            try {
+                await navigator.clipboard.writeText(window.location.href);
+                const btn = event.target;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '✓ Copié !';
+                btn.style.background = '#10b981';
+                btn.style.color = 'white';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.style.background = '';
+                    btn.style.color = '';
+                }, 2000);
+            } catch (error) {
+                alert('Impossible de copier le lien');
+            }
+        }
+        
+        // Load file info on page load
+        loadFileInfo();
+    </script>
+</body>
+</html>

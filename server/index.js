@@ -437,8 +437,43 @@ setInterval(() => {
     res.json({ shareId });
   });
 
-  // Access shared file
+  // Access shared file - Preview page
   app.get('/share/:shareId', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/share.html'));
+  });
+
+  // Get share info
+  app.get('/api/share/:shareId/info', (req, res) => {
+    const { shareId } = req.params;
+    const shareLink = shareLinks.get(shareId);
+  
+    if (!shareLink) {
+      return res.status(404).json({ error: 'Lien de partage introuvable ou expiré' });
+    }
+  
+    if (shareLink.expiresAt && Date.now() > shareLink.expiresAt) {
+      shareLinks.delete(shareId);
+      return res.status(410).json({ error: 'Ce lien de partage a expiré' });
+    }
+  
+    const file = files.get(shareLink.fileId);
+    if (!file) {
+      shareLinks.delete(shareId);
+      return res.status(404).json({ error: 'Fichier introuvable' });
+    }
+
+    res.json({
+      filename: file.filename,
+      size: file.size,
+      uploadedAt: file.uploadedAt,
+      downloads: shareLink.downloads,
+      expiresAt: shareLink.expiresAt,
+      mimeType: file.mimetype
+    });
+  });
+
+  // Download shared file
+  app.get('/api/share/:shareId/download', (req, res) => {
     const { shareId } = req.params;
     const shareLink = shareLinks.get(shareId);
   
