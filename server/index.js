@@ -161,9 +161,12 @@ app.post('/api/upload', upload.array('files', 500), async (req, res) => {
       
       archive.pipe(output);
       
+      // Récupérer les chemins relatifs depuis le JSON
+      const relativePaths = req.body.relativePaths ? JSON.parse(req.body.relativePaths) : [];
+      
       // Ajouter chaque fichier au ZIP avec son chemin relatif
-      uploadedFiles.forEach(file => {
-        const relativePath = req.body[`relativePath_${file.originalname}`] || file.originalname;
+      uploadedFiles.forEach((file, index) => {
+        const relativePath = relativePaths[index] || file.originalname;
         archive.file(file.path, { name: relativePath });
       });
       

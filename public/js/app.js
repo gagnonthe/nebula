@@ -274,13 +274,17 @@ async function uploadAsZip(files, folderName, progressCallback) {
     return new Promise((resolve, reject) => {
         const formData = new FormData();
         
+        // Créer un tableau de chemins relatifs
+        const relativePaths = [];
+        
         // Ajouter tous les fichiers
         files.forEach((file, index) => {
             formData.append('files', file);
-            // Ajouter le chemin relatif pour chaque fichier
-            formData.append(`relativePath_${file.name}`, file.webkitRelativePath || file.name);
+            relativePaths.push(file.webkitRelativePath || file.name);
         });
         
+        // Ajouter les chemins en tant que JSON
+        formData.append('relativePaths', JSON.stringify(relativePaths));
         formData.append('deviceId', deviceId);
         formData.append('targetDevice', 'all');
         formData.append('isFolder', 'true');
