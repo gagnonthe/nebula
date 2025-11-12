@@ -701,7 +701,22 @@ function showNotification(message, type = 'success') {
             const data = await response.json();
             const shareUrl = `${window.location.origin}/share/${data.shareId}`;
         
+            // Set URL in input
             document.getElementById('shareUrl').value = shareUrl;
+            
+            // Generate QR Code
+            const qrContainer = document.getElementById('shareQRCode');
+            qrContainer.innerHTML = ''; // Clear previous QR code
+            new QRCode(qrContainer, {
+                text: shareUrl,
+                width: 200,
+                height: 200,
+                colorDark: '#111827',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            
+            // Show modal
             document.getElementById('shareLinkModal').classList.remove('hidden');
         } catch (error) {
             console.error('Error generating share link:', error);
@@ -728,6 +743,12 @@ function showNotification(message, type = 'success') {
         if (currentShareFileId) {
             await generateShareLink(currentShareFileId);
         }
+    });
+
+    // Close share link modal
+    document.getElementById('closeShareLinkModal')?.addEventListener('click', () => {
+        document.getElementById('shareLinkModal').classList.add('hidden');
+        currentShareFileId = null;
     });
 
     // Make functions globally available
