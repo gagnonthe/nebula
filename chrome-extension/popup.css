@@ -33,7 +33,7 @@ body {
 .header-content { 
     display: flex; 
     align-items: center; 
-    justify-content: space-between; 
+    gap: 0.75rem;
     padding: 0.75rem 1rem;
 }
 
@@ -41,6 +41,30 @@ h1 {
     font-size: 1rem; 
     font-weight: 600;
     color: #111;
+    flex: 1;
+}
+
+/* Header Web Button */
+.btn-header-web {
+    padding: 0.375rem 0.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    background: #fff;
+    font-size: 1.125rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    width: auto;
+    line-height: 1;
+}
+
+.btn-header-web:hover {
+    background: #10b981;
+    border-color: #10b981;
+    transform: scale(1.05);
+}
+
+.btn-header-web:active {
+    transform: scale(0.95);
 }
 
 h2 { 
