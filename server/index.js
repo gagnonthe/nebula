@@ -51,6 +51,8 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 // Base de données en mémoire (à remplacer par une vraie DB en production)
 const files = new Map();
+const texts = new Map(); // { id, title, content, size, uploadedAt, uploadedBy }
+const links = new Map(); // { id, title, url, uploadedAt, uploadedBy }
 const deviceSessions = new Map();
 const shareLinks = new Map();
 
@@ -60,6 +62,100 @@ let totalUploads = 0;
 // Routes API
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' });
+});
+
+// =============================
+// Text & Link resources
+// =============================
+
+// Create a text note
+app.post('/api/text', (req, res) => {
+  try {
+    const { content, title, deviceId } = req.body || {};
+    if (!content || typeof content !== 'string' || content.trim().length === 0) {
+      return res.status(400).json({ error: 'Content is required' });
+    }
+
+    const id = uuidv4();
+    const now = new Date();
+    const size = Buffer.byteLength(content, 'utf8');
+    const note = {
+      id,
+      title: (title && title.trim()) || content.trim().split('\n')[0].slice(0, 80),
+      content,
+      size,
+      mimetype: 'text/plain',
+      uploadedAt: now,
+      uploadedBy: deviceId || 'anonymous'
+    };
+
+    texts.set(id, note);
+    io.emit('text-added', { id, title: note.title, size: note.size, uploadedAt: note.uploadedAt });
+    return res.json({ success: true, id });
+  } catch (err) {
+    console.error('Create text error:', err);
+    return res.status(500).json({ error: 'Failed to create text' });
+  }
+});
+
+// List texts
+app.get('/api/texts', (req, res) => {
+  const list = Array.from(texts.values()).sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+  res.json({ texts: list });
+});
+
+// Delete text
+app.delete('/api/texts/:id', (req, res) => {
+  const { id } = req.params;
+  if (!texts.has(id)) return res.status(404).json({ error: 'Text not found' });
+  texts.delete(id);
+  io.emit('text-deleted', { id });
+  res.json({ success: true });
+});
+
+// Create a link
+app.post('/api/link', (req, res) => {
+  try {
+    const { url, title, deviceId } = req.body || {};
+    try {
+      new URL(url);
+    } catch {
+      return res.status(400).json({ error: 'Valid URL is required' });
+    }
+
+    const id = uuidv4();
+    const now = new Date();
+    const hostname = new URL(url).hostname;
+    const link = {
+      id,
+      title: (title && title.trim()) || hostname,
+      url,
+      uploadedAt: now,
+      uploadedBy: deviceId || 'anonymous'
+    };
+
+    links.set(id, link);
+    io.emit('link-added', { id, title: link.title, url: link.url, uploadedAt: link.uploadedAt });
+    return res.json({ success: true, id });
+  } catch (err) {
+    console.error('Create link error:', err);
+    return res.status(500).json({ error: 'Failed to create link' });
+  }
+});
+
+// List links
+app.get('/api/links', (req, res) => {
+  const list = Array.from(links.values()).sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+  res.json({ links: list });
+});
+
+// Delete link
+app.delete('/api/links/:id', (req, res) => {
+  const { id } = req.params;
+  if (!links.has(id)) return res.status(404).json({ error: 'Link not found' });
+  links.delete(id);
+  io.emit('link-deleted', { id });
+  res.json({ success: true });
 });
 
 // Enregistrer un appareil
@@ -428,12 +524,47 @@ setInterval(() => {
     }
   
     shareLinks.set(shareId, {
+      type: 'file',
       fileId,
       createdAt: Date.now(),
       expiresAt,
       downloads: 0
     });
   
+    res.json({ shareId });
+  });
+
+  // Generate share link for text
+  app.post('/api/share-text/:textId', (req, res) => {
+    const { textId } = req.params;
+    const { expiration } = req.body;
+    const note = texts.get(textId);
+    if (!note) return res.status(404).json({ error: 'Text not found' });
+
+    const shareId = uuidv4().substring(0, 8);
+    let expiresAt = null;
+    if (expiration && expiration !== 'never') {
+      const hours = parseInt(expiration);
+      expiresAt = Date.now() + (hours * 60 * 60 * 1000);
+    }
+    shareLinks.set(shareId, { type: 'text', textId, createdAt: Date.now(), expiresAt, downloads: 0 });
+    res.json({ shareId });
+  });
+
+  // Generate share link for link
+  app.post('/api/share-link/:linkId', (req, res) => {
+    const { linkId } = req.params;
+    const { expiration } = req.body;
+    const link = links.get(linkId);
+    if (!link) return res.status(404).json({ error: 'Link not found' });
+
+    const shareId = uuidv4().substring(0, 8);
+    let expiresAt = null;
+    if (expiration && expiration !== 'never') {
+      const hours = parseInt(expiration);
+      expiresAt = Date.now() + (hours * 60 * 60 * 1000);
+    }
+    shareLinks.set(shareId, { type: 'link', linkId, createdAt: Date.now(), expiresAt, downloads: 0 });
     res.json({ shareId });
   });
 
@@ -455,24 +586,64 @@ setInterval(() => {
       shareLinks.delete(shareId);
       return res.status(410).json({ error: 'Ce lien de partage a expiré' });
     }
-  
-    const file = files.get(shareLink.fileId);
-    if (!file) {
-      shareLinks.delete(shareId);
-      return res.status(404).json({ error: 'Fichier introuvable' });
+    
+    // Backwards compatibility: old entries without type are files
+    const type = shareLink.type || 'file';
+    if (type === 'file') {
+      const file = files.get(shareLink.fileId);
+      if (!file) {
+        shareLinks.delete(shareId);
+        return res.status(404).json({ error: 'Fichier introuvable' });
+      }
+      return res.json({
+        resourceType: 'file',
+        filename: file.filename,
+        size: file.size,
+        uploadedAt: file.uploadedAt,
+        downloads: shareLink.downloads,
+        expiresAt: shareLink.expiresAt,
+        mimeType: file.mimetype
+      });
     }
 
-    res.json({
-      filename: file.filename,
-      size: file.size,
-      uploadedAt: file.uploadedAt,
-      downloads: shareLink.downloads,
-      expiresAt: shareLink.expiresAt,
-      mimeType: file.mimetype
-    });
+    if (type === 'text') {
+      const note = texts.get(shareLink.textId);
+      if (!note) {
+        shareLinks.delete(shareId);
+        return res.status(404).json({ error: 'Texte introuvable' });
+      }
+      return res.json({
+        resourceType: 'text',
+        title: note.title,
+        content: note.content,
+        size: note.size,
+        uploadedAt: note.uploadedAt,
+        downloads: shareLink.downloads,
+        expiresAt: shareLink.expiresAt,
+        mimeType: 'text/plain'
+      });
+    }
+
+    if (type === 'link') {
+      const l = links.get(shareLink.linkId);
+      if (!l) {
+        shareLinks.delete(shareId);
+        return res.status(404).json({ error: 'Lien introuvable' });
+      }
+      return res.json({
+        resourceType: 'link',
+        title: l.title,
+        url: l.url,
+        uploadedAt: l.uploadedAt,
+        downloads: shareLink.downloads,
+        expiresAt: shareLink.expiresAt
+      });
+    }
+
+    return res.status(400).json({ error: 'Type de ressource invalide' });
   });
 
-  // Download shared file
+  // Download shared resource
   app.get('/api/share/:shareId/download', (req, res) => {
     const { shareId } = req.params;
     const shareLink = shareLinks.get(shareId);
@@ -485,20 +656,49 @@ setInterval(() => {
       shareLinks.delete(shareId);
       return res.status(410).send('Ce lien de partage a expiré');
     }
-  
-    const file = files.get(shareLink.fileId);
-    if (!file) {
-      shareLinks.delete(shareId);
-      return res.status(404).send('Fichier introuvable');
-    }
-  
-    shareLink.downloads++;
-  
-    res.download(file.path, file.filename, (err) => {
-      if (err) {
-        console.error('Error downloading file:', err);
+    
+    // Backwards compatibility
+    const type = shareLink.type || 'file';
+    if (type === 'file') {
+      const file = files.get(shareLink.fileId);
+      if (!file) {
+        shareLinks.delete(shareId);
+        return res.status(404).send('Fichier introuvable');
       }
-    });
+      shareLink.downloads++;
+      return res.download(file.path, file.filename, (err) => {
+        if (err) {
+          console.error('Error downloading file:', err);
+        }
+      });
+    }
+
+    if (type === 'text') {
+      const note = texts.get(shareLink.textId);
+      if (!note) {
+        shareLinks.delete(shareId);
+        return res.status(404).send('Texte introuvable');
+      }
+      shareLink.downloads++;
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      res.setHeader('Content-Disposition', 'attachment; filename="note.txt"');
+      return res.send(note.content);
+    }
+
+    if (type === 'link') {
+      const l = links.get(shareLink.linkId);
+      if (!l) {
+        shareLinks.delete(shareId);
+        return res.status(404).send('Lien introuvable');
+      }
+      // Provide a small text file with the URL
+      shareLink.downloads++;
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      res.setHeader('Content-Disposition', 'attachment; filename="link.txt"');
+      return res.send(`URL: ${l.url}\n`);
+    }
+
+    return res.status(400).send('Type de ressource invalide');
   });
 
   // Cleanup expired share links (every hour)

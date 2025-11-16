@@ -314,7 +314,7 @@
     <header class="sticky-header">
         <div class="container header-content">
             <h1>Nebula</h1>
-            <span style="font-size: 0.75rem; color: #6b7280;">📤 Fichier partagé</span>
+            <span id="shareTypeBadge" style="font-size: 0.75rem; color: #6b7280;">📤 Fichier partagé</span>
         </div>
     </header>
 
@@ -328,14 +328,6 @@
             </div>
         </section>
     </main>
-        
-        <div id="content" class="content">
-            <div style="text-align: center; padding: 3rem; color: #9ca3af;">
-                <div style="font-size: 3rem; margin-bottom: 1rem;">⏳</div>
-                <p>Chargement...</p>
-            </div>
-        </div>
-    </div>
 
     <script>
         const shareId = window.location.pathname.split('/').pop();
@@ -364,12 +356,30 @@
         }
         
         function displayFile(data) {
-            const { filename, size, uploadedAt, downloads, expiresAt, mimeType } = data;
-            
+            const { resourceType } = data;
             const content = document.getElementById('content');
+            const badge = document.getElementById('shareTypeBadge');
             
-            const icon = getFileIcon(filename, mimeType);
-            const formattedSize = formatBytes(size);
+            // Defaults for file type (back-compat when resourceType undefined)
+            const type = resourceType || 'file';
+            
+            let filename, size, uploadedAt, downloads, expiresAt, mimeType;
+            if (type === 'file') {
+                ({ filename, size, uploadedAt, downloads, expiresAt, mimeType } = data);
+                if (badge) badge.textContent = '📤 Fichier partagé';
+            } else if (type === 'text') {
+                ({ title: filename, size, uploadedAt, downloads, expiresAt } = data);
+                mimeType = 'text/plain';
+                if (badge) badge.textContent = '📝 Note partagée';
+            } else if (type === 'link') {
+                ({ title: filename, uploadedAt, downloads, expiresAt } = data);
+                size = 0;
+                mimeType = 'text/uri-list';
+                if (badge) badge.textContent = '🔗 Lien partagé';
+            }
+
+            const icon = (type === 'link') ? '🔗' : getFileIcon(filename || '', mimeType);
+            const formattedSize = size ? formatBytes(size) : '';
             const formattedDate = new Date(uploadedAt).toLocaleDateString('fr-FR', {
                 day: 'numeric',
                 month: 'long',
@@ -388,41 +398,65 @@
                 </div>`;
             }
             
-            content.innerHTML = `
-                ${expiryInfo}
-                
-                <div class="file-info">
-                    <div class="file-icon">${icon}</div>
-                    <div class="file-details">
-                        <div class="file-name">${escapeHtml(filename)}</div>
-                        <div class="file-meta">${formattedSize} • Partagé le ${formattedDate}</div>
-                    </div>
-                </div>
-                
-                <div id="preview" class="preview-container">
-                    ${generatePreview(filename, mimeType)}
-                </div>
-                
-                <div class="actions">
+            let previewHtml = '';
+            let actionsHtml = '';
+            if (type === 'file') {
+                previewHtml = generatePreview(filename, mimeType);
+                actionsHtml = `
                     <a href="/api/share/${shareId}/download" class="btn btn-primary" download>
                         📥 Télécharger le fichier
                     </a>
                     <button onclick="copyLink()" class="btn btn-secondary">
                         🔗 Copier le lien
-                    </button>
+                    </button>`;
+            } else if (type === 'text') {
+                const safeContent = escapeHtml(data.content);
+                previewHtml = `<div style="padding: 1rem; max-height: 400px; overflow: auto; background:#fff"><pre style="white-space: pre-wrap; word-wrap: break-word; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.875rem;">${safeContent}</pre></div>`;
+                actionsHtml = `
+                    <a href="/api/share/${shareId}/download" class="btn btn-primary" download>
+                        ⬇️ Télécharger .txt
+                    </a>
+                    <button onclick="copyText()" class="btn btn-secondary">
+                        📋 Copier le texte
+                    </button>`;
+            } else if (type === 'link') {
+                const url = data.url;
+                const domain = (() => { try { return new URL(url).hostname; } catch { return ''; } })();
+                previewHtml = `<div style="padding: 1.25rem; background:#fff; display:flex; align-items:center; gap:.75rem;">
+                    <div style="font-size:1.5rem">🔗</div>
+                    <div style="min-width:0;">
+                        <div class="text-sm" style="font-weight:600; color:#111; word-break:break-all;">${escapeHtml(url)}</div>
+                        <div class="text-xs" style="color:#6b7280">${escapeHtml(domain)}</div>
+                    </div>
+                </div>`;
+                actionsHtml = `
+                    <a href="${url}" target="_blank" rel="noopener" class="btn btn-primary">
+                        🌐 Ouvrir le lien
+                    </a>
+                    <button onclick="copyLink()" class="btn btn-secondary">
+                        🔗 Copier le lien
+                    </button>`;
+            }
+
+            const sizeMeta = formattedSize ? `${formattedSize} • ` : '';
+            content.innerHTML = `
+                ${expiryInfo}
+                <div class="file-info">
+                    <div class="file-icon">${icon}</div>
+                    <div class="file-details">
+                        <div class="file-name">${escapeHtml(filename || '')}</div>
+                        <div class="file-meta">${sizeMeta}Partagé le ${formattedDate}</div>
+                    </div>
                 </div>
-                
+                <div id="preview" class="preview-container">${previewHtml}</div>
+                <div class="actions">${actionsHtml}</div>
                 <div class="stats">
                     <div class="stat">
-                        <div class="stat-value">${downloads}</div>
+                        <div class="stat-value">${downloads ?? 0}</div>
                         <div class="stat-label">Téléchargements</div>
                     </div>
-                    <div class="stat">
-                        <div class="stat-value">${formattedSize}</div>
-                        <div class="stat-label">Taille</div>
-                    </div>
-                </div>
-            `;
+                    ${formattedSize ? `<div class="stat"><div class="stat-value">${formattedSize}</div><div class="stat-label">Taille</div></div>` : ''}
+                </div>`;
         }
         
         function generatePreview(filename, mimeType) {
@@ -534,6 +568,15 @@
             }
         }
         
+        function copyText() {
+            const pre = document.querySelector('#preview pre');
+            if (!pre) return;
+            const text = pre.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Texte copié !');
+            }).catch(() => alert('Impossible de copier le texte'));
+        }
+
         // Load file info on page load
         loadFileInfo();
     </script>

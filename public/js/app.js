@@ -62,11 +62,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Charger les fichiers
     await loadFiles();
 
+    // Charger notes & liens
+    await loadResources();
+
     // Charger les appareils
     await loadDevices();
 
     // Configuration de l'upload
     setupUpload();
+
+    // Configuration import texte & lien
+    setupTextLinkImport();
 });
 
 // WebSocket
@@ -108,6 +114,12 @@ function initWebSocket() {
         console.log('Appareil déconnecté:', data);
         loadDevices();
     });
+
+    // Real-time for notes & links
+    socket.on('text-added', () => loadResources());
+    socket.on('link-added', () => loadResources());
+    socket.on('text-deleted', () => loadResources());
+    socket.on('link-deleted', () => loadResources());
 }
 
 // Mettre à jour le statut de connexion
@@ -395,6 +407,185 @@ async function loadFiles() {
     }
 }
 
+// Charger notes & liens
+async function loadResources() {
+    try {
+        const [textsRes, linksRes] = await Promise.all([
+            fetch(`${API_URL}/api/texts`),
+            fetch(`${API_URL}/api/links`)
+        ]);
+        const textsData = await textsRes.json();
+        const linksData = await linksRes.json();
+
+        const list = document.getElementById('notesLinksList');
+        if (!list) return; // page older version
+
+        const items = [];
+        (textsData.texts || []).forEach(n => items.push({
+            type: 'text',
+            id: n.id,
+            title: n.title,
+            size: n.size,
+            uploadedAt: n.uploadedAt
+        }));
+        (linksData.links || []).forEach(l => items.push({
+            type: 'link',
+            id: l.id,
+            title: l.title,
+            url: l.url,
+            uploadedAt: l.uploadedAt
+        }));
+
+        if (items.length === 0) {
+            list.innerHTML = '<p class="empty-state">Aucun contenu</p>';
+            return;
+        }
+
+        // Sort by uploadedAt desc
+        items.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+
+        list.innerHTML = items.map(item => {
+            const isText = item.type === 'text';
+            const icon = isText ? '📝' : '🔗';
+            const meta = isText ? `${formatFileSize(item.size)} • ${formatDate(item.uploadedAt)}` : `${item.url || ''}`;
+            const actions = isText ? `
+                <button class="btn btn-primary" onclick="shareText('${item.id}')">🔗 Partager</button>
+                <button onclick="copyNote('${item.id}')">📋 Copier</button>
+                <button class="btn btn-danger" onclick="deleteNote('${item.id}')">🗑️ Supprimer</button>
+            ` : `
+                <button class="btn btn-primary" onclick="shareLink('${item.id}')">🔗 Partager</button>
+                <a href="${item.url}" target="_blank" rel="noopener">🌐 Ouvrir</a>
+                <button class="btn btn-danger" onclick="deleteLink('${item.id}')">🗑️ Supprimer</button>
+            `;
+            return `
+                <div class="file-item">
+                    <div class="file-info">
+                        <div class="file-icon">${icon}</div>
+                        <div class="file-details">
+                            <h3>${escapeHtml(item.title || (isText ? 'Note' : 'Lien'))}</h3>
+                            <div class="file-meta">${escapeHtml(meta)}</div>
+                        </div>
+                    </div>
+                    <div class="file-actions">${actions}</div>
+                </div>
+            `;
+        }).join('');
+    } catch (e) {
+        console.error('Erreur chargement ressources:', e);
+    }
+}
+
+// Config import texte & lien
+function setupTextLinkImport() {
+    const sendTextBtn = document.getElementById('sendTextBtn');
+    const clearTextBtn = document.getElementById('clearTextBtn');
+    const sendLinkBtn = document.getElementById('sendLinkBtn');
+    const pasteLinkBtn = document.getElementById('pasteLinkBtn');
+
+    sendTextBtn?.addEventListener('click', async () => {
+        const input = document.getElementById('importTextInput');
+        const content = input.value.trim();
+        if (!content) return showNotification('Veuillez saisir un texte', 'error');
+        try {
+            const res = await fetch(`${API_URL}/api/text`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content, deviceId })
+            });
+            if (!res.ok) throw new Error();
+            input.value = '';
+            showNotification('Texte importé', 'success');
+            await loadResources();
+        } catch (e) { showNotification('Erreur lors de l\'import du texte', 'error'); }
+    });
+
+    clearTextBtn?.addEventListener('click', () => {
+        const input = document.getElementById('importTextInput');
+        input.value = '';
+    });
+
+    sendLinkBtn?.addEventListener('click', async () => {
+        const input = document.getElementById('importLinkInput');
+        const url = input.value.trim();
+        if (!url) return showNotification('Veuillez saisir une URL', 'error');
+        try {
+            const res = await fetch(`${API_URL}/api/link`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url, deviceId })
+            });
+            if (!res.ok) throw new Error();
+            input.value = '';
+            showNotification('Lien importé', 'success');
+            await loadResources();
+        } catch (e) { showNotification('Erreur lors de l\'import du lien', 'error'); }
+    });
+
+    pasteLinkBtn?.addEventListener('click', async () => {
+        try {
+            const text = await navigator.clipboard.readText();
+            document.getElementById('importLinkInput').value = text;
+        } catch (e) { showNotification('Impossible d\'accéder au presse-papiers', 'error'); }
+    });
+}
+
+// Actions sur notes & liens
+async function deleteNote(id) {
+    if (!confirm('Supprimer cette note ?')) return;
+    await fetch(`${API_URL}/api/texts/${id}`, { method: 'DELETE' });
+    await loadResources();
+}
+
+async function deleteLink(id) {
+    if (!confirm('Supprimer ce lien ?')) return;
+    await fetch(`${API_URL}/api/links/${id}`, { method: 'DELETE' });
+    await loadResources();
+}
+
+async function copyNote(id) {
+    try {
+        const res = await fetch(`${API_URL}/api/texts`);
+        const data = await res.json();
+        const note = (data.texts || []).find(n => n.id === id);
+        if (!note) return;
+        await navigator.clipboard.writeText(note.content);
+        showNotification('Texte copié !', 'success');
+    } catch { showNotification('Impossible de copier', 'error'); }
+}
+
+// Share links for notes & links
+async function shareText(id) {
+    const expiration = document.getElementById('shareExpiration').value;
+    try {
+        const response = await fetch(`${API_URL}/api/share-text/${id}`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ expiration })
+        });
+        const data = await response.json();
+        const shareUrl = `${window.location.origin}/share/${data.shareId}`;
+        document.getElementById('shareUrl').value = shareUrl;
+        const qrContainer = document.getElementById('shareQRCode');
+        qrContainer.innerHTML = '';
+        new QRCode(qrContainer, { text: shareUrl, width: 200, height: 200, colorDark: '#111827', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
+        document.getElementById('shareLinkModal').classList.remove('hidden');
+    } catch { showNotification('Erreur lors de la génération du lien', 'error'); }
+}
+
+async function shareLink(id) {
+    const expiration = document.getElementById('shareExpiration').value;
+    try {
+        const response = await fetch(`${API_URL}/api/share-link/${id}`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ expiration })
+        });
+        const data = await response.json();
+        const shareUrl = `${window.location.origin}/share/${data.shareId}`;
+        document.getElementById('shareUrl').value = shareUrl;
+        const qrContainer = document.getElementById('shareQRCode');
+        qrContainer.innerHTML = '';
+        new QRCode(qrContainer, { text: shareUrl, width: 200, height: 200, colorDark: '#111827', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
+        document.getElementById('shareLinkModal').classList.remove('hidden');
+    } catch { showNotification('Erreur lors de la génération du lien', 'error'); }
+}
+
 // Télécharger un fichier
 async function downloadFile(fileId, filename) {
     try {
@@ -466,6 +657,12 @@ function getFileIcon(mimetype) {
     if (mimetype.includes('zip') || mimetype.includes('rar')) return '📦';
     if (mimetype.includes('text')) return '📝';
     return '📄';
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text == null ? '' : String(text);
+    return div.innerHTML;
 }
 
 function formatFileSize(bytes) {
@@ -754,5 +951,10 @@ function showNotification(message, type = 'success') {
     // Make functions globally available
     window.generateShareLink = generateShareLink;
     window.deleteAdminFile = deleteAdminFile;
+    window.shareText = shareText;
+    window.shareLink = shareLink;
+    window.deleteNote = deleteNote;
+    window.deleteLink = deleteLink;
+    window.copyNote = copyNote;
 
     })();

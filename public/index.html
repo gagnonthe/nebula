@@ -389,6 +389,44 @@
             </div>
         </section>
 
+        <!-- Import Text & Links Section -->
+        <section class="section">
+            <div class="section-header" style="display:flex; justify-content:space-between; align-items:center; gap:.5rem;">
+                <h2>Importer du texte et des liens</h2>
+                <span class="text-xs text-gray-400">Collez une note ou une URL à partager</span>
+            </div>
+            <div class="section-body">
+                <div style="display:grid; grid-template-columns: 1fr; gap: 1rem;">
+                    <!-- Text note -->
+                    <div>
+                        <label class="text-sm text-gray-600" for="importTextInput">📝 Texte</label>
+                        <textarea id="importTextInput" rows="4" placeholder="Collez votre texte ici..." style="margin-top:.5rem; width:100%; padding:.75rem; border:1px solid #e5e7eb; border-radius:.375rem; font-size:.875rem;"></textarea>
+                        <div style="display:flex; gap:.5rem; margin-top:.5rem;">
+                            <button id="sendTextBtn">📥 Envoyer le texte</button>
+                            <button id="clearTextBtn">🧹 Effacer</button>
+                        </div>
+                    </div>
+                    <!-- Link -->
+                    <div>
+                        <label class="text-sm text-gray-600" for="importLinkInput">🔗 Lien</label>
+                        <input id="importLinkInput" type="url" placeholder="https://exemple.com" style="margin-top:.5rem; width:100%; padding:.75rem; border:1px solid #e5e7eb; border-radius:.375rem; font-size:.875rem;" />
+                        <div style="display:flex; gap:.5rem; margin-top:.5rem;">
+                            <button id="sendLinkBtn">📥 Envoyer le lien</button>
+                            <button id="pasteLinkBtn">📋 Coller</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notes & Links list -->
+                <div style="margin-top:1rem;">
+                    <h3 class="text-sm" style="margin-bottom:.5rem;">Vos notes & liens</h3>
+                    <div id="notesLinksList" class="file-list">
+                        <p class="empty-state">Aucun contenu</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Files Section -->
         <section class="section">
             <div class="section-header">
