@@ -1,4 +1,4 @@
-const CACHE_NAME = 'file-share-v15';
+const CACHE_NAME = 'file-share-v16';
 const urlsToCache = [
   '/',
   '/index.html',

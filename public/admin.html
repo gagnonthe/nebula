@@ -2,43 +2,276 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1F2937">
     <title>Admin - Nebula</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📂</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👑</text></svg>">
     
     <style>
-        :root {
-            --primary: #4F46E5;
-            --primary-dark: #4338CA;
-            --secondary: #7C3AED;
-            --success: #10B981;
-            --danger: #EF4444;
-            --warning: #F59E0B;
-            --gray-50: #F9FAFB;
-            --gray-100: #F3F4F6;
-            --gray-200: #E5E7EB;
-            --gray-300: #D1D5DB;
-            --gray-400: #9CA3AF;
-            --gray-500: #6B7280;
-            --gray-600: #4B5563;
-            --gray-700: #374151;
-            --gray-800: #1F2937;
-            --gray-900: #111827;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background: #111827;
+            color: #F9FAFB;
+            line-height: 1.5;
             min-height: 100vh;
-            color: var(--gray-900);
+            -webkit-font-smoothing: antialiased;
         }
-
+        
+        /* Responsive container */
+        .container { 
+            max-width: 72rem; 
+            margin: 0 auto; 
+            padding: 0 1rem;
+            width: 100%;
+        }
+        
+        @media (max-width: 640px) {
+            .container { padding: 0 0.75rem; }
+        }
+        
+        .sticky-header { 
+            position: sticky; 
+            top: 0; 
+            z-index: 40; 
+            border-bottom: 1px solid #374151; 
+            background: rgba(31, 41, 55, 0.95); 
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        
+        .header-content { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            padding: 0.75rem 0;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        
+        h1 { 
+            font-size: 1rem; 
+            font-weight: 600;
+            color: #F9FAFB;
+        }
+        
+        h2 { 
+            font-size: 0.875rem; 
+            font-weight: 600;
+            color: #F9FAFB;
+        }
+        
+        @media (min-width: 768px) {
+            h1 { font-size: 1.125rem; }
+            h2 { font-size: 1rem; }
+        }
+        
+        .status-badge { 
+            font-size: 0.75rem; 
+            border: 1px solid #4B5563; 
+            border-radius: 9999px; 
+            padding: 0.125rem 0.5rem; 
+            color: #9CA3AF;
+            white-space: nowrap;
+        }
+        
+        .status-badge.online { 
+            border-color: #10b981; 
+            color: #10b981; 
+            background: rgba(16, 185, 129, 0.1); 
+        }
+        
+        main { padding: 1.5rem 0; }
+        
+        .section { 
+            margin-bottom: 1.5rem; 
+            border: 1px solid #374151; 
+            border-radius: 0.5rem; 
+            background: #1F2937;
+            overflow: hidden;
+        }
+        
+        .section-header { 
+            padding: 1rem; 
+            border-bottom: 1px solid #374151;
+        }
+        
+        @media (max-width: 640px) {
+            .section-header { padding: 0.75rem; }
+            .section-body { padding: 0.75rem; }
+        }
+        
+        .section-body { padding: 1rem; }
+        
+        .text-sm { 
+            font-size: 0.875rem;
+            word-break: break-word;
+        }
+        
+        .text-xs { 
+            font-size: 0.75rem;
+            word-break: break-word;
+        }
+        
+        .text-gray-400 { color: #9ca3af; }
+        .text-gray-600 { color: #D1D5DB; }
+        .hidden { display: none !important; }
+        
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); 
+            gap: 0.5rem;
+        }
+        
+        .stat-card { 
+            padding: 1rem; 
+            border: 1px solid #374151; 
+            border-radius: 0.375rem;
+            text-align: center;
+            background: #1F2937;
+        }
+        
+        .stat-card .icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-card .value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #F9FAFB;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-card .label {
+            font-size: 0.75rem;
+            color: #9CA3AF;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 0.25rem;
+            border-bottom: 1px solid #374151;
+            padding: 0 1rem;
+            overflow-x: auto;
+        }
+        
+        .tab {
+            padding: 0.625rem 1rem;
+            background: none;
+            border: none;
+            color: #9CA3AF;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            white-space: nowrap;
+            border-bottom: 2px solid transparent;
+            transition: all 0.15s;
+        }
+        
+        .tab.active {
+            color: #F9FAFB;
+            border-bottom-color: #FF1493;
+        }
+        
+        .tab:hover {
+            color: #F9FAFB;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 1rem;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .item-list { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 0.5rem;
+        }
+        
+        .item { 
+            padding: 0.75rem; 
+            border: 1px solid #374151; 
+            border-radius: 0.375rem;
+            word-break: break-word;
+            background: #111827;
+            transition: background 0.15s;
+        }
+        
+        @media (max-width: 640px) {
+            .item { padding: 0.625rem; }
+        }
+        
+        .item:hover { background: #1F2937; }
+        
+        .item-name { 
+            font-weight: 500; 
+            font-size: 0.875rem; 
+            margin-bottom: 0.25rem;
+            word-break: break-word;
+            color: #F9FAFB;
+        }
+        
+        .item-meta { 
+            font-size: 0.75rem; 
+            color: #9CA3AF;
+        }
+        
+        .item-actions { 
+            display: flex; 
+            gap: 0.5rem; 
+            margin-top: 0.5rem;
+            flex-wrap: wrap;
+        }
+        
+        @media (max-width: 400px) {
+            .item-actions { flex-direction: column; }
+            .item-actions button { width: 100%; }
+        }
+        
+        button { 
+            padding: 0.375rem 0.75rem; 
+            border: 1px solid #4B5563; 
+            border-radius: 0.375rem; 
+            background: #1F2937; 
+            color: #F9FAFB;
+            font-size: 0.875rem; 
+            cursor: pointer; 
+            transition: background 0.15s;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        button:hover { background: #374151; }
+        button:active { transform: scale(0.98); }
+        
+        .btn-danger { 
+            background: rgba(239, 68, 68, 0.1); 
+            border-color: #EF4444; 
+            color: #FCA5A5;
+        }
+        
+        .btn-danger:hover { background: rgba(239, 68, 68, 0.2); }
+        
+        .empty-state { 
+            text-align: center; 
+            padding: 1.5rem; 
+            font-size: 0.875rem; 
+            color: #6B7280;
+        }
+        
+        .loading { 
+            text-align: center; 
+            padding: 1.5rem; 
+            font-size: 0.875rem; 
+            color: #6B7280;
+        }
+        
         /* Login Page */
         .login-container {
             display: flex;
@@ -49,9 +282,9 @@
         }
 
         .login-card {
-            background: white;
-            border-radius: 1rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            background: #1F2937;
+            border: 1px solid #374151;
+            border-radius: 0.5rem;
             padding: 2rem;
             max-width: 400px;
             width: 100%;
@@ -64,15 +297,12 @@
 
         .login-header h1 {
             font-size: 2rem;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: #F9FAFB;
             margin-bottom: 0.5rem;
         }
 
         .login-header p {
-            color: var(--gray-500);
+            color: #9CA3AF;
             font-size: 0.875rem;
         }
 
@@ -83,7 +313,7 @@
         .form-group label {
             display: block;
             margin-bottom: 0.5rem;
-            color: var(--gray-700);
+            color: #D1D5DB;
             font-weight: 500;
             font-size: 0.875rem;
         }
@@ -91,20 +321,22 @@
         .form-group input {
             width: 100%;
             padding: 0.75rem;
-            border: 2px solid var(--gray-200);
-            border-radius: 0.5rem;
+            border: 1px solid #4B5563;
+            border-radius: 0.375rem;
             font-size: 1rem;
-            transition: all 0.3s;
+            background: #111827;
+            color: #F9FAFB;
+            transition: all 0.15s;
         }
 
         .form-group input:focus {
             outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            border-color: #FF1493;
+            background: #1F2937;
         }
 
         .error-message {
-            color: var(--danger);
+            color: #FCA5A5;
             font-size: 0.875rem;
             margin-top: 0.5rem;
             display: none;
@@ -114,327 +346,79 @@
             display: block;
         }
 
-        .btn {
+        .btn-login {
             width: 100%;
             padding: 0.75rem;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            background: #FF1493;
             color: white;
             border: none;
-            border-radius: 0.5rem;
+            border-radius: 0.375rem;
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: all 0.15s;
         }
 
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.4);
+        .btn-login:hover {
+            background: #E1127D;
         }
 
-        .btn:active {
-            transform: translateY(0);
+        .btn-login:active {
+            transform: scale(0.98);
         }
-
-        /* Admin Dashboard */
-        .admin-container {
-            display: none;
-            min-height: 100vh;
-            padding: 2rem 1rem;
-        }
-
-        .admin-container.show {
-            display: block;
-        }
-
-        .admin-header {
-            background: white;
-            border-radius: 1rem;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .admin-header h1 {
-            font-size: 1.875rem;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .admin-header .actions {
-            display: flex;
-            gap: 0.75rem;
-        }
-
-        .btn-secondary {
-            background: var(--gray-600);
-            color: white;
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn-secondary:hover {
-            background: var(--gray-700);
-            transform: translateY(-2px);
-        }
-
-        .btn-danger {
-            background: var(--danger);
-        }
-
-        .btn-danger:hover {
-            background: #DC2626;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .stat-card {
-            background: white;
-            border-radius: 1rem;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-            padding: 1.5rem;
-            text-align: center;
-        }
-
-        .stat-card .icon {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-card .value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--gray-900);
-            margin-bottom: 0.25rem;
-        }
-
-        .stat-card .label {
-            font-size: 0.875rem;
-            color: var(--gray-500);
-        }
-
-        .content-section {
-            background: white;
-            border-radius: 1rem;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .section-header h2 {
-            font-size: 1.5rem;
-            color: var(--gray-900);
-        }
-
-        .tabs {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
-            border-bottom: 2px solid var(--gray-200);
-        }
-
-        .tab {
-            padding: 0.75rem 1.5rem;
-            background: none;
-            border: none;
-            color: var(--gray-600);
-            font-weight: 600;
-            cursor: pointer;
-            position: relative;
-            transition: color 0.2s;
-        }
-
-        .tab.active {
-            color: var(--primary);
-        }
-
-        .tab.active::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: var(--primary);
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        .item-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-
-        .item {
-            background: var(--gray-50);
-            border-radius: 0.5rem;
-            padding: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 1rem;
-            transition: all 0.2s;
-        }
-
-        .item:hover {
-            background: var(--gray-100);
-        }
-
-        .item-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .item-name {
-            font-weight: 600;
-            color: var(--gray-900);
-            margin-bottom: 0.25rem;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .item-meta {
-            font-size: 0.875rem;
-            color: var(--gray-500);
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .item-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .btn-icon {
-            background: none;
-            border: none;
-            font-size: 1.25rem;
-            cursor: pointer;
-            padding: 0.5rem;
-            border-radius: 0.375rem;
-            transition: all 0.2s;
-        }
-
-        .btn-icon:hover {
-            background: var(--gray-200);
-        }
-
-        .btn-icon.delete:hover {
-            background: var(--danger);
-            color: white;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 3rem 1rem;
-            color: var(--gray-400);
-        }
-
-        .empty-state .icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 2rem;
-            color: var(--gray-400);
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
+        
         /* Notification */
-        .notification {
-            position: fixed;
-            top: 2rem;
-            right: 2rem;
-            background: white;
-            padding: 1rem 1.5rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
-            z-index: 9999;
-            display: none;
-            align-items: center;
-            gap: 0.75rem;
-            max-width: 400px;
+        #notification { 
+            position: fixed; 
+            top: 1rem; 
+            right: 1rem; 
+            max-width: 20rem; 
+            padding: 1rem; 
+            background: #1F2937; 
+            color: #F9FAFB; 
+            border: 1px solid #374151;
+            border-radius: 0.5rem; 
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); 
+            transform: translateX(calc(100% + 2rem)); 
+            transition: transform 0.3s; 
+            z-index: 50;
+            word-break: break-word;
         }
-
-        .notification.show {
-            display: flex;
-            animation: slideIn 0.3s ease-out;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
+        
+        @media (max-width: 640px) {
+            #notification {
+                left: 1rem;
+                right: 1rem;
+                max-width: none;
+                transform: translateY(-150%);
             }
-            to {
-                transform: translateX(0);
-                opacity: 1;
+            #notification.show {
+                transform: translateY(0);
             }
         }
-
-        .notification.success {
-            border-left: 4px solid var(--success);
+        
+        @media (min-width: 641px) {
+            #notification.show { 
+                transform: translateX(0); 
+            }
         }
-
-        .notification.error {
-            border-left: 4px solid var(--danger);
+        
+        #notification.success {
+            border-left: 4px solid #10B981;
         }
-
-        @media (max-width: 768px) {
-            .admin-header {
-                flex-direction: column;
-                align-items: stretch;
+        
+        #notification.error {
+            border-left: 4px solid #EF4444;
+        }
+        
+        @supports (padding: max(0px)) {
+            body {
+                padding-left: max(0px, env(safe-area-inset-left));
+                padding-right: max(0px, env(safe-area-inset-right));
             }
-
-            .admin-header .actions {
-                flex-direction: column;
-            }
-
-            .item {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .item-meta {
-                flex-direction: column;
-                gap: 0.25rem;
+            .container {
+                padding-left: max(1rem, env(safe-area-inset-left));
+                padding-right: max(1rem, env(safe-area-inset-right));
             }
         }
     </style>
@@ -453,106 +437,127 @@
                     <input type="password" id="pinInput" placeholder="Entrez le code PIN" maxlength="4" autocomplete="off" required>
                     <div id="loginError" class="error-message">❌ Code PIN incorrect</div>
                 </div>
-                <button type="submit" class="btn">Se connecter</button>
+                <button type="submit" class="btn-login">Se connecter</button>
             </form>
         </div>
     </div>
 
     <!-- Admin Dashboard -->
-    <div id="adminDashboard" class="admin-container">
-        <div class="admin-header">
-            <h1>👑 Panneau d'Administration</h1>
-            <div class="actions">
-                <button id="refreshBtn" class="btn-secondary">🔄 Actualiser</button>
-                <button id="logoutBtn" class="btn-secondary btn-danger">🚪 Déconnexion</button>
+    <div id="adminDashboard" class="hidden">
+        <header class="sticky-header">
+            <div class="container">
+                <div class="header-content">
+                    <h1>👑 Admin Nebula</h1>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button id="refreshBtn" style="font-size: 0.75rem;">🔄 Actualiser</button>
+                        <button id="logoutBtn" class="btn-danger" style="font-size: 0.75rem;">🚪 Déconnexion</button>
+                    </div>
+                </div>
             </div>
-        </div>
+        </header>
 
-        <!-- Stats -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="icon">📁</div>
-                <div class="value" id="totalFiles">0</div>
-                <div class="label">Fichiers</div>
-            </div>
-            <div class="stat-card">
-                <div class="icon">📝</div>
-                <div class="value" id="totalTexts">0</div>
-                <div class="label">Notes</div>
-            </div>
-            <div class="stat-card">
-                <div class="icon">🔗</div>
-                <div class="value" id="totalLinks">0</div>
-                <div class="label">Liens</div>
-            </div>
-            <div class="stat-card">
-                <div class="icon">💾</div>
-                <div class="value" id="totalSize">0 MB</div>
-                <div class="label">Stockage</div>
-            </div>
-            <div class="stat-card">
-                <div class="icon">📱</div>
-                <div class="value" id="totalDevices">0</div>
-                <div class="label">Appareils</div>
-            </div>
-        </div>
-
-        <!-- Content Tabs -->
-        <div class="content-section">
-            <div class="tabs">
-                <button class="tab active" data-tab="files">📁 Fichiers</button>
-                <button class="tab" data-tab="texts">📝 Notes</button>
-                <button class="tab" data-tab="links">🔗 Liens</button>
-                <button class="tab" data-tab="devices">📱 Appareils</button>
-            </div>
-
-            <!-- Files Tab -->
-            <div id="filesTab" class="tab-content active">
+        <main class="container">
+            <!-- Stats -->
+            <section class="section">
                 <div class="section-header">
-                    <h2>Tous les fichiers</h2>
-                    <button id="deleteAllFiles" class="btn-secondary btn-danger">🗑️ Tout supprimer</button>
+                    <h2>📊 Statistiques</h2>
                 </div>
-                <div id="filesList" class="item-list">
-                    <div class="loading">Chargement...</div>
+                <div class="section-body">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="icon">📁</div>
+                            <div class="value" id="totalFiles">0</div>
+                            <div class="label">Fichiers</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="icon">📝</div>
+                            <div class="value" id="totalTexts">0</div>
+                            <div class="label">Notes</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="icon">🔗</div>
+                            <div class="value" id="totalLinks">0</div>
+                            <div class="label">Liens</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="icon">💾</div>
+                            <div class="value" id="totalSize">0 MB</div>
+                            <div class="label">Stockage</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="icon">📱</div>
+                            <div class="value" id="totalDevices">0</div>
+                            <div class="label">Appareils</div>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            </section>
 
-            <!-- Texts Tab -->
-            <div id="textsTab" class="tab-content">
-                <div class="section-header">
-                    <h2>Toutes les notes</h2>
-                    <button id="deleteAllTexts" class="btn-secondary btn-danger">🗑️ Tout supprimer</button>
+            <!-- Content Tabs -->
+            <section class="section">
+                <div class="tabs">
+                    <button class="tab active" data-tab="files">📁 Fichiers</button>
+                    <button class="tab" data-tab="texts">📝 Notes</button>
+                    <button class="tab" data-tab="links">🔗 Liens</button>
+                    <button class="tab" data-tab="devices">📱 Appareils</button>
                 </div>
-                <div id="textsList" class="item-list">
-                    <div class="loading">Chargement...</div>
-                </div>
-            </div>
 
-            <!-- Links Tab -->
-            <div id="linksTab" class="tab-content">
-                <div class="section-header">
-                    <h2>Tous les liens</h2>
-                    <button id="deleteAllLinks" class="btn-secondary btn-danger">🗑️ Tout supprimer</button>
+                <!-- Files Tab -->
+                <div id="filesTab" class="tab-content active">
+                    <div style="padding: 1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #374151;">
+                        <h2>Tous les fichiers</h2>
+                        <button id="deleteAllFiles" class="btn-danger" style="font-size: 0.75rem;">🗑️ Tout supprimer</button>
+                    </div>
+                    <div style="padding: 1rem;">
+                        <div id="filesList" class="item-list">
+                            <div class="loading">Chargement...</div>
+                        </div>
+                    </div>
                 </div>
-                <div id="linksList" class="item-list">
-                    <div class="loading">Chargement...</div>
-                </div>
-            </div>
 
-            <!-- Devices Tab -->
-            <div id="devicesTab" class="tab-content">
-                <div class="section-header">
-                    <h2>Tous les appareils</h2>
+                <!-- Texts Tab -->
+                <div id="textsTab" class="tab-content">
+                    <div style="padding: 1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #374151;">
+                        <h2>Toutes les notes</h2>
+                        <button id="deleteAllTexts" class="btn-danger" style="font-size: 0.75rem;">🗑️ Tout supprimer</button>
+                    </div>
+                    <div style="padding: 1rem;">
+                        <div id="textsList" class="item-list">
+                            <div class="loading">Chargement...</div>
+                        </div>
+                    </div>
                 </div>
-                <div id="devicesList" class="item-list">
-                    <div class="loading">Chargement...</div>
+
+                <!-- Links Tab -->
+                <div id="linksTab" class="tab-content">
+                    <div style="padding: 1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #374151;">
+                        <h2>Tous les liens</h2>
+                        <button id="deleteAllLinks" class="btn-danger" style="font-size: 0.75rem;">🗑️ Tout supprimer</button>
+                    </div>
+                    <div style="padding: 1rem;">
+                        <div id="linksList" class="item-list">
+                            <div class="loading">Chargement...</div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
+
+                <!-- Devices Tab -->
+                <div id="devicesTab" class="tab-content">
+                    <div style="padding: 1rem; border-bottom: 1px solid #374151;">
+                        <h2>Tous les appareils</h2>
+                    </div>
+                    <div style="padding: 1rem;">
+                        <div id="devicesList" class="item-list">
+                            <div class="loading">Chargement...</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
     </div>
 
     <!-- Notification -->
-    <div id="notification" class="notification">
+    <div id="notification">
         <span id="notificationMessage"></span>
     </div>
 
@@ -593,11 +598,10 @@
             e.preventDefault();
             const pin = pinInput.value;
 
-            // Vérifier le PIN (vous pouvez le faire côté serveur pour plus de sécurité)
             if (pin === ADMIN_PIN) {
                 sessionStorage.setItem('adminAuth', 'true');
                 loginPage.style.display = 'none';
-                adminDashboard.classList.add('show');
+                adminDashboard.classList.remove('hidden');
                 await loadAllData();
             } else {
                 loginError.classList.add('show');
@@ -609,7 +613,7 @@
         // Logout
         logoutBtn.addEventListener('click', () => {
             sessionStorage.removeItem('adminAuth');
-            adminDashboard.classList.remove('show');
+            adminDashboard.classList.add('hidden');
             loginPage.style.display = 'flex';
             pinInput.value = '';
         });
@@ -621,7 +625,7 @@
         window.addEventListener('load', () => {
             if (sessionStorage.getItem('adminAuth') === 'true') {
                 loginPage.style.display = 'none';
-                adminDashboard.classList.add('show');
+                adminDashboard.classList.remove('hidden');
                 loadAllData();
             }
         });
@@ -629,7 +633,8 @@
         // Show notification
         function showNotification(message, type = 'success') {
             notificationMessage.textContent = message;
-            notification.className = `notification ${type} show`;
+            notification.className = `${type}`;
+            notification.classList.add('show');
             setTimeout(() => {
                 notification.classList.remove('show');
             }, 3000);
