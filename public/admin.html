@@ -777,10 +777,10 @@
             container.innerHTML = devices.map(device => `
                 <div class="item">
                     <div class="item-info">
-                        <div class="item-name">📱 ${device.name}</div>
+                        <div class="item-name">📱 ${device.deviceName || 'Appareil'}</div>
                         <div class="item-meta">
-                            <span>🔑 ${device.id.substring(0, 8)}</span>
-                            <span>📅 Dernière connexion: ${formatDate(device.lastSeen)}</span>
+                            <span>🔑 ${device.deviceId ? device.deviceId.substring(0, 8) : 'N/A'}</span>
+                            <span>📅 Dernière connexion: ${device.lastSeen ? formatDate(device.lastSeen) : 'N/A'}</span>
                         </div>
                     </div>
                 </div>
