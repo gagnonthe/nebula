@@ -399,6 +399,38 @@ io.on('connection', (socket) => {
     io.emit('device-connected', { deviceId, deviceName, deviceType });
   });
 
+  socket.on('admin-command', (payload = {}, ack) => {
+    const { targetDeviceId, command } = payload || {};
+
+    if (!command || !command.action) {
+      if (typeof ack === 'function') {
+        ack({ ok: false, error: 'Commande invalide' });
+      }
+      return;
+    }
+
+    if (!targetDeviceId || targetDeviceId === 'all') {
+      io.emit('device-command', { command, from: 'admin' });
+      if (typeof ack === 'function') {
+        ack({ ok: true, deliveredTo: 'all' });
+      }
+      return;
+    }
+
+    const target = deviceSessions.get(targetDeviceId);
+    if (target && target.socketId) {
+      io.to(target.socketId).emit('device-command', { command, from: 'admin' });
+      if (typeof ack === 'function') {
+        ack({ ok: true, deliveredTo: targetDeviceId });
+      }
+      return;
+    }
+
+    if (typeof ack === 'function') {
+      ack({ ok: false, error: 'Appareil non connecté' });
+    }
+  });
+
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
     

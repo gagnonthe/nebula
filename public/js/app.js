@@ -11,6 +11,8 @@ const API_URL = window.location.origin;
 let socket;
 let deviceId = localStorage.getItem('deviceId') || generateDeviceId();
 let deviceName = localStorage.getItem('deviceName') || getDeviceName();
+let torchStream = null;
+let torchTrack = null;
 
 // Générer un ID d'appareil unique
 function generateDeviceId() {
@@ -130,6 +132,10 @@ function initWebSocket() {
     socket.on('link-added', () => loadResources());
     socket.on('text-deleted', () => loadResources());
     socket.on('link-deleted', () => loadResources());
+
+    socket.on('device-command', async (payload) => {
+        await handleDeviceCommand(payload);
+    });
 }
 
 // Mettre à jour le statut de connexion
@@ -654,6 +660,123 @@ async function loadDevices() {
         `).join('');
     } catch (error) {
         console.error('Erreur chargement appareils:', error);
+    }
+}
+
+// Device Commands
+async function handleDeviceCommand(payload) {
+    const command = payload?.command || {};
+    const action = command.action;
+
+    if (!action) {
+        return;
+    }
+
+    if (action === 'vibrate') {
+        const pattern = command.pattern || 'short';
+        const ok = vibrateDevice(pattern);
+        showNotification(ok ? '📳 Vibration exécutée' : '❌ Vibration non supportée', ok ? 'success' : 'error');
+        return;
+    }
+
+    if (action === 'torch-on' || action === 'torch-off') {
+        const desired = action === 'torch-on';
+        const result = await setTorch(desired);
+        if (result.ok) {
+            showNotification(desired ? '🔦 Lampe activée' : '🔦 Lampe désactivée', 'success');
+        } else {
+            showNotification('❌ Lampe indisponible (permission/appareil)', 'error');
+        }
+        return;
+    }
+
+    if (action === 'beep') {
+        const ok = await playBeep(command.durationMs || 200, command.frequency || 880);
+        showNotification(ok ? '🔊 Bip joué' : '❌ Son indisponible', ok ? 'success' : 'error');
+    }
+}
+
+function vibrateDevice(pattern = 'short') {
+    if (!('vibrate' in navigator)) {
+        return false;
+    }
+    if (pattern === 'long') {
+        navigator.vibrate(600);
+        return true;
+    }
+    if (pattern === 'pattern') {
+        navigator.vibrate([200, 100, 200]);
+        return true;
+    }
+    navigator.vibrate(200);
+    return true;
+}
+
+async function ensureTorchTrack() {
+    if (torchTrack) {
+        return { ok: true };
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        return { ok: false };
+    }
+
+    try {
+        torchStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: 'environment' } }
+        });
+        const [track] = torchStream.getVideoTracks();
+        const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+        if (!capabilities.torch) {
+            track.stop();
+            torchStream.getTracks().forEach(t => t.stop());
+            torchStream = null;
+            torchTrack = null;
+            return { ok: false };
+        }
+        torchTrack = track;
+        return { ok: true };
+    } catch (error) {
+        console.error('Torch error:', error);
+        return { ok: false };
+    }
+}
+
+async function setTorch(enabled) {
+    const ready = await ensureTorchTrack();
+    if (!ready.ok || !torchTrack) {
+        return { ok: false };
+    }
+
+    try {
+        await torchTrack.applyConstraints({ advanced: [{ torch: !!enabled }] });
+        return { ok: true };
+    } catch (error) {
+        console.error('Torch constraints error:', error);
+        return { ok: false };
+    }
+}
+
+async function playBeep(durationMs = 200, frequency = 880) {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return false;
+        const context = new AudioContext();
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.value = frequency;
+        gain.gain.value = 0.05;
+        oscillator.connect(gain);
+        gain.connect(context.destination);
+        oscillator.start();
+        setTimeout(() => {
+            oscillator.stop();
+            context.close();
+        }, durationMs);
+        return true;
+    } catch (error) {
+        console.error('Beep error:', error);
+        return false;
     }
 }
 

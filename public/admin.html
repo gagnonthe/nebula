@@ -228,6 +228,52 @@
             margin-top: 0.5rem;
             flex-wrap: wrap;
         }
+
+        .command-grid {
+            display: grid;
+            gap: 0.75rem;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        }
+
+        .command-card {
+            border: 1px solid #374151;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            background: #111827;
+        }
+
+        .command-card h3 {
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+            color: #F9FAFB;
+        }
+
+        .command-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+
+        .select-control {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #4B5563;
+            border-radius: 0.375rem;
+            background: #111827;
+            color: #F9FAFB;
+            font-size: 0.875rem;
+        }
+
+        .btn-primary {
+            background: rgba(255, 20, 147, 0.15);
+            border-color: #FF1493;
+            color: #FFB3D9;
+        }
+
+        .btn-primary:hover {
+            background: rgba(255, 20, 147, 0.25);
+        }
         
         @media (max-width: 400px) {
             .item-actions { flex-direction: column; }
@@ -447,7 +493,10 @@
         <header class="sticky-header">
             <div class="container">
                 <div class="header-content">
-                    <h1>👑 Admin Nebula</h1>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <h1>👑 Admin Nebula</h1>
+                        <span id="socketStatus" class="status-badge">🔴 Hors ligne</span>
+                    </div>
                     <div style="display: flex; gap: 0.5rem;">
                         <button id="refreshBtn" style="font-size: 0.75rem;">🔄 Actualiser</button>
                         <button id="logoutBtn" class="btn-danger" style="font-size: 0.75rem;">🚪 Déconnexion</button>
@@ -500,6 +549,7 @@
                     <button class="tab" data-tab="texts">📝 Notes</button>
                     <button class="tab" data-tab="links">🔗 Liens</button>
                     <button class="tab" data-tab="devices">📱 Appareils</button>
+                    <button class="tab" data-tab="commands">🎛️ Commandes</button>
                 </div>
 
                 <!-- Files Tab -->
@@ -552,6 +602,51 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Commands Tab -->
+                <div id="commandsTab" class="tab-content">
+                    <div style="padding: 1rem; border-bottom: 1px solid #374151;">
+                        <h2>Contrôles des appareils</h2>
+                        <p class="text-xs text-gray-400" style="margin-top: 0.25rem;">
+                            Certaines commandes nécessitent une autorisation sur l'appareil (caméra pour la lampe).
+                        </p>
+                        <div style="margin-top: 0.75rem;">
+                            <label for="commandTarget" class="text-xs text-gray-400">Appareil cible</label>
+                            <select id="commandTarget" class="select-control">
+                                <option value="all">Tous les appareils</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="padding: 1rem;">
+                        <div class="command-grid">
+                            <div class="command-card">
+                                <h3>📳 Vibreur</h3>
+                                <p class="text-xs text-gray-400">Déclenche une vibration (mobile uniquement).</p>
+                                <div class="command-actions">
+                                    <button class="btn-primary" data-command="vibrate" data-pattern="short">Courte</button>
+                                    <button class="btn-primary" data-command="vibrate" data-pattern="long">Longue</button>
+                                    <button class="btn-primary" data-command="vibrate" data-pattern="pattern">Motif</button>
+                                </div>
+                            </div>
+                            <div class="command-card">
+                                <h3>🔦 Lampe</h3>
+                                <p class="text-xs text-gray-400">Allume/éteint le flash si supporté.</p>
+                                <div class="command-actions">
+                                    <button class="btn-primary" data-command="torch-on">Allumer</button>
+                                    <button class="btn-primary" data-command="torch-off">Éteindre</button>
+                                </div>
+                            </div>
+                            <div class="command-card">
+                                <h3>🔊 Son</h3>
+                                <p class="text-xs text-gray-400">Joue un petit bip (si autorisé).</p>
+                                <div class="command-actions">
+                                    <button class="btn-primary" data-command="beep" data-duration="200">Bip court</button>
+                                    <button class="btn-primary" data-command="beep" data-duration="600">Bip long</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </section>
         </main>
     </div>
@@ -561,9 +656,12 @@
         <span id="notificationMessage"></span>
     </div>
 
+    <script src="/socket.io/socket.io.js"></script>
     <script>
         const API_URL = window.location.origin;
         const ADMIN_PIN = '1234'; // Code PIN par défaut (à changer dans les variables d'environnement)
+        let socket = null;
+        let devicesCache = [];
 
         // Elements
         const loginPage = document.getElementById('loginPage');
@@ -575,6 +673,20 @@
         const refreshBtn = document.getElementById('refreshBtn');
         const notification = document.getElementById('notification');
         const notificationMessage = document.getElementById('notificationMessage');
+        const socketStatus = document.getElementById('socketStatus');
+
+        function setSocketStatus(online) {
+            if (!socketStatus) return;
+            socketStatus.textContent = online ? '🟢 Connecté' : '🔴 Hors ligne';
+            socketStatus.classList.toggle('online', online);
+        }
+
+        function initSocket() {
+            if (socket) return;
+            socket = io(API_URL);
+            socket.on('connect', () => setSocketStatus(true));
+            socket.on('disconnect', () => setSocketStatus(false));
+        }
 
         // Tab system
         document.querySelectorAll('.tab').forEach(tab => {
@@ -602,6 +714,7 @@
                 sessionStorage.setItem('adminAuth', 'true');
                 loginPage.style.display = 'none';
                 adminDashboard.classList.remove('hidden');
+                initSocket();
                 await loadAllData();
             } else {
                 loginError.classList.add('show');
@@ -626,6 +739,7 @@
             if (sessionStorage.getItem('adminAuth') === 'true') {
                 loginPage.style.display = 'none';
                 adminDashboard.classList.remove('hidden');
+                initSocket();
                 loadAllData();
             }
         });
@@ -653,6 +767,53 @@
         function formatDate(dateString) {
             const date = new Date(dateString);
             return date.toLocaleDateString('fr-FR') + ' ' + date.toLocaleTimeString('fr-FR');
+        }
+
+        function updateCommandDevices(devices) {
+            const select = document.getElementById('commandTarget');
+            if (!select) return;
+            const current = select.value || 'all';
+            const options = ['<option value="all">Tous les appareils</option>'];
+            devices.forEach(device => {
+                if (!device.deviceId) return;
+                const label = `${device.deviceName || 'Appareil'} (${device.deviceId.substring(0, 8)})`;
+                options.push(`<option value="${device.deviceId}">${label}</option>`);
+            });
+            select.innerHTML = options.join('');
+            select.value = current;
+        }
+
+        function sendAdminCommand(action, extra = {}) {
+            if (!socket || !socket.connected) {
+                showNotification('WebSocket hors ligne', 'error');
+                return;
+            }
+            const targetDeviceId = document.getElementById('commandTarget')?.value || 'all';
+            const command = { action, ...extra };
+
+            socket.emit('admin-command', { targetDeviceId, command }, (ack) => {
+                if (ack?.ok) {
+                    showNotification('Commande envoyée', 'success');
+                } else {
+                    showNotification(ack?.error || 'Commande non envoyée', 'error');
+                }
+            });
+        }
+
+        function bindCommandButtons() {
+            document.querySelectorAll('[data-command]').forEach(button => {
+                button.addEventListener('click', () => {
+                    const action = button.dataset.command;
+                    const payload = {};
+                    if (button.dataset.pattern) {
+                        payload.pattern = button.dataset.pattern;
+                    }
+                    if (button.dataset.duration) {
+                        payload.durationMs = parseInt(button.dataset.duration, 10) || 200;
+                    }
+                    sendAdminCommand(action, payload);
+                });
+            });
         }
 
         // Load all data
@@ -773,6 +934,8 @@
         // Display devices
         function displayDevices(devices) {
             const container = document.getElementById('devicesList');
+            devicesCache = devices;
+            updateCommandDevices(devicesCache);
             
             if (devices.length === 0) {
                 container.innerHTML = '<div class="empty-state"><div class="icon">📱</div><p>Aucun appareil</p></div>';
@@ -895,6 +1058,8 @@
                 showNotification('Erreur lors de la suppression', 'error');
             }
         });
+
+        bindCommandButtons();
     </script>
 </body>
 </html>
