@@ -542,19 +542,19 @@ function setupTextLinkImport() {
 // Actions sur notes & liens
 async function deleteNote(id) {
     if (!confirm('Supprimer cette note ?')) return;
-    await fetch(`${API_URL}/api/texts/${id}`, { method: 'DELETE' });
+    await fetch(`${window.location.origin}/api/texts/${id}`, { method: 'DELETE' });
     await loadResources();
 }
 
 async function deleteLink(id) {
     if (!confirm('Supprimer ce lien ?')) return;
-    await fetch(`${API_URL}/api/links/${id}`, { method: 'DELETE' });
+    await fetch(`${window.location.origin}/api/links/${id}`, { method: 'DELETE' });
     await loadResources();
 }
 
 async function copyNote(id) {
     try {
-        const res = await fetch(`${API_URL}/api/texts`);
+        const res = await fetch(`${window.location.origin}/api/texts`);
         const data = await res.json();
         const note = (data.texts || []).find(n => n.id === id);
         if (!note) return;
@@ -567,7 +567,7 @@ async function copyNote(id) {
 async function shareText(id) {
     const expiration = document.getElementById('shareExpiration').value;
     try {
-        const response = await fetch(`${API_URL}/api/share-text/${id}`, {
+        const response = await fetch(`${window.location.origin}/api/share-text/${id}`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ expiration })
         });
         const data = await response.json();
@@ -583,7 +583,7 @@ async function shareText(id) {
 async function shareLink(id) {
     const expiration = document.getElementById('shareExpiration').value;
     try {
-        const response = await fetch(`${API_URL}/api/share-link/${id}`, {
+        const response = await fetch(`${window.location.origin}/api/share-link/${id}`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ expiration })
         });
         const data = await response.json();
@@ -599,7 +599,7 @@ async function shareLink(id) {
 // Télécharger un fichier
 async function downloadFile(fileId, filename) {
     try {
-        window.location.href = `${API_URL}/api/download/${fileId}`;
+        window.location.href = `${window.location.origin}/api/download/${fileId}`;
         showNotification('Téléchargement démarré', 'success');
     } catch (error) {
         console.error('Erreur téléchargement:', error);
@@ -614,7 +614,7 @@ async function deleteFile(fileId) {
     }
 
     try {
-        const response = await fetch(`${API_URL}/api/files/${fileId}`, {
+        const response = await fetch(`${window.location.origin}/api/files/${fileId}`, {
             method: 'DELETE'
         });
         
@@ -821,7 +821,7 @@ function showNotification(message, type = 'success') {
         if (!confirm('Êtes-vous sûr de vouloir supprimer ce fichier ?')) return;
     
         try {
-            const response = await fetch(`${API_URL}/api/files/${fileId}`, {
+            const response = await fetch(`${window.location.origin}/api/files/${fileId}`, {
                 method: 'DELETE'
             });
         
@@ -899,7 +899,7 @@ function showNotification(message, type = 'success') {
         const expiration = document.getElementById('shareExpiration').value;
     
         try {
-            const response = await fetch(`${API_URL}/api/share/${fileId}`, {
+            const response = await fetch(`${window.location.origin}/api/share/${fileId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ expiration })
@@ -956,6 +956,14 @@ function showNotification(message, type = 'success') {
     document.getElementById('closeShareLinkModal')?.addEventListener('click', () => {
         document.getElementById('shareLinkModal').classList.add('hidden');
         currentShareFileId = null;
+    });
+
+    // Close modal on backdrop click
+    document.getElementById('shareLinkModal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'shareLinkModal') {
+            document.getElementById('shareLinkModal').classList.add('hidden');
+            currentShareFileId = null;
+        }
     });
 
     // Make functions globally available
