@@ -75,6 +75,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupTextLinkImport();
 });
 
+// Toggle import section
+function toggleImportSection() {
+    const body = document.getElementById('importSectionBody');
+    const btn = document.getElementById('importToggleBtn');
+    if (body && btn) {
+        body.classList.toggle('hidden');
+        btn.classList.toggle('collapsed');
+    }
+}
+
 // WebSocket
 function initWebSocket() {
     socket = io(API_URL);
@@ -958,5 +968,6 @@ function showNotification(message, type = 'success') {
     window.copyNote = copyNote;
     window.downloadFile = downloadFile;
     window.deleteFile = deleteFile;
+    window.toggleImportSection = toggleImportSection;
 
     })();
