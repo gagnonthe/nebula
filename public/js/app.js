@@ -956,5 +956,7 @@ function showNotification(message, type = 'success') {
     window.deleteNote = deleteNote;
     window.deleteLink = deleteLink;
     window.copyNote = copyNote;
+    window.downloadFile = downloadFile;
+    window.deleteFile = deleteFile;
 
     })();
