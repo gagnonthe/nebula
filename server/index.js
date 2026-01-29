@@ -461,6 +461,71 @@ setInterval(() => {
     });
   });
 
+  // Get all files for admin
+  app.get('/api/admin/files', (req, res) => {
+    const filesList = [];
+    files.forEach((file, fileId) => {
+      filesList.push({
+        id: fileId,
+        name: file.filename,
+        size: file.size,
+        uploadDate: file.uploadedAt,
+        deviceId: file.uploadedBy
+      });
+    });
+    res.json({
+      files: filesList.sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate))
+    });
+  });
+
+  // Get all texts for admin
+  app.get('/api/admin/texts', (req, res) => {
+    const textsList = [];
+    texts.forEach((text, textId) => {
+      textsList.push({
+        id: textId,
+        title: text.title,
+        content: text.content,
+        createdAt: text.createdAt
+      });
+    });
+    res.json({
+      texts: textsList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    });
+  });
+
+  // Get all links for admin
+  app.get('/api/admin/links', (req, res) => {
+    const linksList = [];
+    links.forEach((link, linkId) => {
+      linksList.push({
+        id: linkId,
+        title: link.title,
+        url: link.url,
+        createdAt: link.createdAt
+      });
+    });
+    res.json({
+      links: linksList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    });
+  });
+
+  // Delete all texts
+  app.post('/api/admin/cleanup/texts', (req, res) => {
+    const deleted = texts.size;
+    texts.clear();
+    io.emit('all-texts-deleted');
+    res.json({ deleted });
+  });
+
+  // Delete all links
+  app.post('/api/admin/cleanup/links', (req, res) => {
+    const deleted = links.size;
+    links.clear();
+    io.emit('all-links-deleted');
+    res.json({ deleted });
+  });
+
   // Delete old files (7+ days)
   app.post('/api/admin/cleanup/old', (req, res) => {
     const now = Date.now();

@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Nebula</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📂</text></svg>">
+    
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-dark: #4338CA;
+            --secondary: #7C3AED;
+            --success: #10B981;
+            --danger: #EF4444;
+            --warning: #F59E0B;
+            --gray-50: #F9FAFB;
+            --gray-100: #F3F4F6;
+            --gray-200: #E5E7EB;
+            --gray-300: #D1D5DB;
+            --gray-400: #9CA3AF;
+            --gray-500: #6B7280;
+            --gray-600: #4B5563;
+            --gray-700: #374151;
+            --gray-800: #1F2937;
+            --gray-900: #111827;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--gray-900);
+        }
+
+        /* Login Page */
+        .login-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            padding: 2rem;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-header h1 {
+            font-size: 2rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .login-header p {
+            color: var(--gray-500);
+            font-size: 0.875rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--gray-700);
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--gray-200);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .error-message {
+            color: var(--danger);
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* Admin Dashboard */
+        .admin-container {
+            display: none;
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+
+        .admin-container.show {
+            display: block;
+        }
+
+        .admin-header {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .admin-header h1 {
+            font-size: 1.875rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .admin-header .actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn-secondary {
+            background: var(--gray-600);
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-700);
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background: #DC2626;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .stat-card .icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-card .label {
+            font-size: 0.875rem;
+            color: var(--gray-500);
+        }
+
+        .content-section {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-header h2 {
+            font-size: 1.5rem;
+            color: var(--gray-900);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .tab {
+            padding: 0.75rem 1.5rem;
+            background: none;
+            border: none;
+            color: var(--gray-600);
+            font-weight: 600;
+            cursor: pointer;
+            position: relative;
+            transition: color 0.2s;
+        }
+
+        .tab.active {
+            color: var(--primary);
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .item-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .item {
+            background: var(--gray-50);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            transition: all 0.2s;
+        }
+
+        .item:hover {
+            background: var(--gray-100);
+        }
+
+        .item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .item-name {
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 0.25rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .item-meta {
+            font-size: 0.875rem;
+            color: var(--gray-500);
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-icon {
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            transition: all 0.2s;
+        }
+
+        .btn-icon:hover {
+            background: var(--gray-200);
+        }
+
+        .btn-icon.delete:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--gray-400);
+        }
+
+        .empty-state .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--gray-400);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            background: white;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            gap: 0.75rem;
+            max-width: 400px;
+        }
+
+        .notification.show {
+            display: flex;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .notification.success {
+            border-left: 4px solid var(--success);
+        }
+
+        .notification.error {
+            border-left: 4px solid var(--danger);
+        }
+
+        @media (max-width: 768px) {
+            .admin-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .admin-header .actions {
+                flex-direction: column;
+            }
+
+            .item {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .item-meta {
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Page -->
+    <div id="loginPage" class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <h1>👑 Admin Nebula</h1>
+                <p>Accès réservé aux administrateurs</p>
+            </div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="pinInput">Code PIN</label>
+                    <input type="password" id="pinInput" placeholder="Entrez le code PIN" maxlength="4" autocomplete="off" required>
+                    <div id="loginError" class="error-message">❌ Code PIN incorrect</div>
+                </div>
+                <button type="submit" class="btn">Se connecter</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="adminDashboard" class="admin-container">
+        <div class="admin-header">
+            <h1>👑 Panneau d'Administration</h1>
+            <div class="actions">
+                <button id="refreshBtn" class="btn-secondary">🔄 Actualiser</button>
+                <button id="logoutBtn" class="btn-secondary btn-danger">🚪 Déconnexion</button>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="icon">📁</div>
+                <div class="value" id="totalFiles">0</div>
+                <div class="label">Fichiers</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">📝</div>
+                <div class="value" id="totalTexts">0</div>
+                <div class="label">Notes</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">🔗</div>
+                <div class="value" id="totalLinks">0</div>
+                <div class="label">Liens</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">💾</div>
+                <div class="value" id="totalSize">0 MB</div>
+                <div class="label">Stockage</div>
+            </div>
+            <div class="stat-card">
+                <div class="icon">📱</div>
+                <div class="value" id="totalDevices">0</div>
+                <div class="label">Appareils</div>
+            </div>
+        </div>
+
+        <!-- Content Tabs -->
+        <div class="content-section">
+            <div class="tabs">
+                <button class="tab active" data-tab="files">📁 Fichiers</button>
+                <button class="tab" data-tab="texts">📝 Notes</button>
+                <button class="tab" data-tab="links">🔗 Liens</button>
+                <button class="tab" data-tab="devices">📱 Appareils</button>
+            </div>
+
+            <!-- Files Tab -->
+            <div id="filesTab" class="tab-content active">
+                <div class="section-header">
+                    <h2>Tous les fichiers</h2>
+                    <button id="deleteAllFiles" class="btn-secondary btn-danger">🗑️ Tout supprimer</button>
+                </div>
+                <div id="filesList" class="item-list">
+                    <div class="loading">Chargement...</div>
+                </div>
+            </div>
+
+            <!-- Texts Tab -->
+            <div id="textsTab" class="tab-content">
+                <div class="section-header">
+                    <h2>Toutes les notes</h2>
+                    <button id="deleteAllTexts" class="btn-secondary btn-danger">🗑️ Tout supprimer</button>
+                </div>
+                <div id="textsList" class="item-list">
+                    <div class="loading">Chargement...</div>
+                </div>
+            </div>
+
+            <!-- Links Tab -->
+            <div id="linksTab" class="tab-content">
+                <div class="section-header">
+                    <h2>Tous les liens</h2>
+                    <button id="deleteAllLinks" class="btn-secondary btn-danger">🗑️ Tout supprimer</button>
+                </div>
+                <div id="linksList" class="item-list">
+                    <div class="loading">Chargement...</div>
+                </div>
+            </div>
+
+            <!-- Devices Tab -->
+            <div id="devicesTab" class="tab-content">
+                <div class="section-header">
+                    <h2>Tous les appareils</h2>
+                </div>
+                <div id="devicesList" class="item-list">
+                    <div class="loading">Chargement...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification">
+        <span id="notificationMessage"></span>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin;
+        const ADMIN_PIN = '1234'; // Code PIN par défaut (à changer dans les variables d'environnement)
+
+        // Elements
+        const loginPage = document.getElementById('loginPage');
+        const adminDashboard = document.getElementById('adminDashboard');
+        const loginForm = document.getElementById('loginForm');
+        const pinInput = document.getElementById('pinInput');
+        const loginError = document.getElementById('loginError');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const notification = document.getElementById('notification');
+        const notificationMessage = document.getElementById('notificationMessage');
+
+        // Tab system
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.dataset.tab;
+                
+                // Update tabs
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // Update content
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.getElementById(`${tabName}Tab`).classList.add('active');
+            });
+        });
+
+        // Login
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const pin = pinInput.value;
+
+            // Vérifier le PIN (vous pouvez le faire côté serveur pour plus de sécurité)
+            if (pin === ADMIN_PIN) {
+                sessionStorage.setItem('adminAuth', 'true');
+                loginPage.style.display = 'none';
+                adminDashboard.classList.add('show');
+                await loadAllData();
+            } else {
+                loginError.classList.add('show');
+                pinInput.value = '';
+                setTimeout(() => loginError.classList.remove('show'), 3000);
+            }
+        });
+
+        // Logout
+        logoutBtn.addEventListener('click', () => {
+            sessionStorage.removeItem('adminAuth');
+            adminDashboard.classList.remove('show');
+            loginPage.style.display = 'flex';
+            pinInput.value = '';
+        });
+
+        // Refresh
+        refreshBtn.addEventListener('click', loadAllData);
+
+        // Check auth on load
+        window.addEventListener('load', () => {
+            if (sessionStorage.getItem('adminAuth') === 'true') {
+                loginPage.style.display = 'none';
+                adminDashboard.classList.add('show');
+                loadAllData();
+            }
+        });
+
+        // Show notification
+        function showNotification(message, type = 'success') {
+            notificationMessage.textContent = message;
+            notification.className = `notification ${type} show`;
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('fr-FR') + ' ' + date.toLocaleTimeString('fr-FR');
+        }
+
+        // Load all data
+        async function loadAllData() {
+            try {
+                const [statsRes, filesRes, textsRes, linksRes, devicesRes] = await Promise.all([
+                    fetch(`${API_URL}/api/admin/stats`),
+                    fetch(`${API_URL}/api/admin/files`),
+                    fetch(`${API_URL}/api/admin/texts`),
+                    fetch(`${API_URL}/api/admin/links`),
+                    fetch(`${API_URL}/api/devices`)
+                ]);
+
+                const stats = await statsRes.json();
+                const filesData = await filesRes.json();
+                const textsData = await textsRes.json();
+                const linksData = await linksRes.json();
+                const devicesData = await devicesRes.json();
+
+                // Update stats
+                document.getElementById('totalFiles').textContent = filesData.files?.length || 0;
+                document.getElementById('totalTexts').textContent = textsData.texts?.length || 0;
+                document.getElementById('totalLinks').textContent = linksData.links?.length || 0;
+                document.getElementById('totalSize').textContent = formatFileSize(stats.totalSize || 0);
+                document.getElementById('totalDevices').textContent = devicesData.devices?.length || 0;
+
+                // Display files
+                displayFiles(filesData.files || []);
+                displayTexts(textsData.texts || []);
+                displayLinks(linksData.links || []);
+                displayDevices(devicesData.devices || []);
+
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showNotification('Erreur lors du chargement des données', 'error');
+            }
+        }
+
+        // Display files
+        function displayFiles(files) {
+            const container = document.getElementById('filesList');
+            
+            if (files.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="icon">📁</div><p>Aucun fichier</p></div>';
+                return;
+            }
+
+            container.innerHTML = files.map(file => `
+                <div class="item">
+                    <div class="item-info">
+                        <div class="item-name">📄 ${file.name}</div>
+                        <div class="item-meta">
+                            <span>💾 ${formatFileSize(file.size)}</span>
+                            <span>📅 ${formatDate(file.uploadDate)}</span>
+                            <span>📱 Device: ${file.deviceId.substring(0, 8)}</span>
+                        </div>
+                    </div>
+                    <div class="item-actions">
+                        <button class="btn-icon" onclick="downloadFile('${file.id}')" title="Télécharger">⬇️</button>
+                        <button class="btn-icon delete" onclick="deleteFile('${file.id}')" title="Supprimer">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Display texts
+        function displayTexts(texts) {
+            const container = document.getElementById('textsList');
+            
+            if (texts.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="icon">📝</div><p>Aucune note</p></div>';
+                return;
+            }
+
+            container.innerHTML = texts.map(text => `
+                <div class="item">
+                    <div class="item-info">
+                        <div class="item-name">📝 ${text.title}</div>
+                        <div class="item-meta">
+                            <span>📅 ${formatDate(text.createdAt)}</span>
+                            <span>📏 ${text.content.length} caractères</span>
+                        </div>
+                    </div>
+                    <div class="item-actions">
+                        <button class="btn-icon" onclick="viewText('${text.id}')" title="Voir">👁️</button>
+                        <button class="btn-icon delete" onclick="deleteText('${text.id}')" title="Supprimer">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Display links
+        function displayLinks(links) {
+            const container = document.getElementById('linksList');
+            
+            if (links.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="icon">🔗</div><p>Aucun lien</p></div>';
+                return;
+            }
+
+            container.innerHTML = links.map(link => `
+                <div class="item">
+                    <div class="item-info">
+                        <div class="item-name">🔗 ${link.title}</div>
+                        <div class="item-meta">
+                            <span>🌐 ${link.url}</span>
+                            <span>📅 ${formatDate(link.createdAt)}</span>
+                        </div>
+                    </div>
+                    <div class="item-actions">
+                        <button class="btn-icon" onclick="openLink('${link.url}')" title="Ouvrir">🌐</button>
+                        <button class="btn-icon delete" onclick="deleteLink('${link.id}')" title="Supprimer">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Display devices
+        function displayDevices(devices) {
+            const container = document.getElementById('devicesList');
+            
+            if (devices.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="icon">📱</div><p>Aucun appareil</p></div>';
+                return;
+            }
+
+            container.innerHTML = devices.map(device => `
+                <div class="item">
+                    <div class="item-info">
+                        <div class="item-name">📱 ${device.name}</div>
+                        <div class="item-meta">
+                            <span>🔑 ${device.id.substring(0, 8)}</span>
+                            <span>📅 Dernière connexion: ${formatDate(device.lastSeen)}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Actions
+        async function downloadFile(fileId) {
+            window.location.href = `${API_URL}/api/download/${fileId}`;
+        }
+
+        async function deleteFile(fileId) {
+            if (!confirm('Supprimer ce fichier ?')) return;
+            
+            try {
+                const res = await fetch(`${API_URL}/api/files/${fileId}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showNotification('Fichier supprimé');
+                    await loadAllData();
+                }
+            } catch (error) {
+                showNotification('Erreur lors de la suppression', 'error');
+            }
+        }
+
+        async function viewText(textId) {
+            try {
+                const res = await fetch(`${API_URL}/api/texts`);
+                const data = await res.json();
+                const text = data.texts.find(t => t.id === textId);
+                if (text) {
+                    alert(`${text.title}\n\n${text.content}`);
+                }
+            } catch (error) {
+                showNotification('Erreur', 'error');
+            }
+        }
+
+        async function deleteText(textId) {
+            if (!confirm('Supprimer cette note ?')) return;
+            
+            try {
+                const res = await fetch(`${API_URL}/api/texts/${textId}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showNotification('Note supprimée');
+                    await loadAllData();
+                }
+            } catch (error) {
+                showNotification('Erreur lors de la suppression', 'error');
+            }
+        }
+
+        function openLink(url) {
+            window.open(url, '_blank');
+        }
+
+        async function deleteLink(linkId) {
+            if (!confirm('Supprimer ce lien ?')) return;
+            
+            try {
+                const res = await fetch(`${API_URL}/api/links/${linkId}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showNotification('Lien supprimé');
+                    await loadAllData();
+                }
+            } catch (error) {
+                showNotification('Erreur lors de la suppression', 'error');
+            }
+        }
+
+        // Delete all
+        document.getElementById('deleteAllFiles').addEventListener('click', async () => {
+            if (!confirm('⚠️ ATTENTION ! Supprimer TOUS les fichiers ? Cette action est irréversible !')) return;
+            
+            try {
+                const res = await fetch(`${API_URL}/api/admin/cleanup/all`, { method: 'POST' });
+                const data = await res.json();
+                showNotification(`${data.deleted} fichiers supprimés`);
+                await loadAllData();
+            } catch (error) {
+                showNotification('Erreur lors de la suppression', 'error');
+            }
+        });
+
+        document.getElementById('deleteAllTexts').addEventListener('click', async () => {
+            if (!confirm('⚠️ ATTENTION ! Supprimer TOUTES les notes ? Cette action est irréversible !')) return;
+            
+            try {
+                const res = await fetch(`${API_URL}/api/admin/cleanup/texts`, { method: 'POST' });
+                const data = await res.json();
+                showNotification(`${data.deleted} notes supprimées`);
+                await loadAllData();
+            } catch (error) {
+                showNotification('Erreur lors de la suppression', 'error');
+            }
+        });
+
+        document.getElementById('deleteAllLinks').addEventListener('click', async () => {
+            if (!confirm('⚠️ ATTENTION ! Supprimer TOUS les liens ? Cette action est irréversible !')) return;
+            
+            try {
+                const res = await fetch(`${API_URL}/api/admin/cleanup/links`, { method: 'POST' });
+                const data = await res.json();
+                showNotification(`${data.deleted} liens supprimés`);
+                await loadAllData();
+            } catch (error) {
+                showNotification('Erreur lors de la suppression', 'error');
+            }
+        });
+    </script>
+</body>
+</html>
