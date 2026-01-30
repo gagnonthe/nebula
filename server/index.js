@@ -180,6 +180,11 @@ app.post('/api/device/register', (req, res) => {
   });
 });
 
+// Générer un code d'accès aléatoire (4 chiffres)
+function generateAccessCode() {
+  return Math.floor(1000 + Math.random() * 9000).toString();
+}
+
 // Upload de fichier(s) avec support ZIP pour dossiers
 app.post('/api/upload', upload.array('files', 500), async (req, res) => {
   try {
@@ -189,7 +194,7 @@ app.post('/api/upload', upload.array('files', 500), async (req, res) => {
       return res.status(400).json({ error: 'No files uploaded' });
     }
 
-    const { deviceId, targetDevice, folderName, isFolder } = req.body;
+    const { deviceId, targetDevice, folderName, isFolder, isPrivate, accessCode } = req.body;
     
     totalUploads++;
     
@@ -218,7 +223,9 @@ app.post('/api/upload', upload.array('files', 500), async (req, res) => {
           uploadedAt: new Date(),
           path: zipFilePath,
           isZip: true,
-          originalFileCount: uploadedFiles.length
+          originalFileCount: uploadedFiles.length,
+          isPrivate: isPrivate === 'true',
+          accessCode: isPrivate === 'true' ? (accessCode || generateAccessCode()) : null
         };
         
         files.set(fileId, fileData);
@@ -282,7 +289,9 @@ app.post('/api/upload', upload.array('files', 500), async (req, res) => {
         uploadedBy: deviceId || 'anonymous',
         targetDevice: targetDevice || 'all',
         uploadedAt: new Date(),
-        path: file.path
+        path: file.path,
+        isPrivate: isPrivate === 'true',
+        accessCode: isPrivate === 'true' ? (accessCode || generateAccessCode()) : null
       };
 
       files.set(fileId, fileData);
@@ -339,10 +348,18 @@ app.get('/api/files', (req, res) => {
 // Télécharger un fichier
 app.get('/api/download/:fileId', (req, res) => {
   const { fileId } = req.params;
+  const { code } = req.query;
   const file = files.get(fileId);
 
   if (!file) {
     return res.status(404).json({ error: 'File not found' });
+  }
+
+  // Vérifier si le fichier est privé et demander le code
+  if (file.isPrivate && file.accessCode) {
+    if (!code || code !== file.accessCode) {
+      return res.status(403).json({ error: 'Access code required', requiresCode: true });
+    }
   }
 
   if (!fs.existsSync(file.path)) {

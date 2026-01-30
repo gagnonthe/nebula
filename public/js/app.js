@@ -175,10 +175,23 @@ function setupUpload() {
     const uploadArea = document.getElementById('uploadArea');
     const selectFilesBtn = document.getElementById('selectFiles');
     const selectFolderBtn = document.getElementById('selectFolder');
+    const togglePrivateCheckbox = document.getElementById('togglePrivate');
+    const privateOptions = document.getElementById('privateOptions');
 
     if (!fileInput || !uploadArea) {
         console.error('Éléments d\'upload non trouvés');
         return;
+    }
+
+    // Gérer le toggle des options privées
+    if (togglePrivateCheckbox && privateOptions) {
+        togglePrivateCheckbox.addEventListener('change', () => {
+            if (togglePrivateCheckbox.checked) {
+                privateOptions.style.display = 'block';
+            } else {
+                privateOptions.style.display = 'none';
+            }
+        });
     }
 
     // Bouton fichiers
@@ -318,6 +331,17 @@ async function uploadAsZip(files, folderName, progressCallback) {
         formData.append('isFolder', 'true');
         formData.append('folderName', folderName);
         
+        // Ajouter les paramètres de sécurité
+        const togglePrivateCheckbox = document.getElementById('togglePrivate');
+        const customAccessCodeInput = document.getElementById('customAccessCode');
+        
+        if (togglePrivateCheckbox && togglePrivateCheckbox.checked) {
+            formData.append('isPrivate', 'true');
+            if (customAccessCodeInput && customAccessCodeInput.value.trim()) {
+                formData.append('accessCode', customAccessCodeInput.value.trim());
+            }
+        }
+        
         const xhr = new XMLHttpRequest();
         
         xhr.upload.addEventListener('progress', (e) => {
@@ -352,6 +376,17 @@ async function uploadFile(file, progressCallback) {
         formData.append('deviceId', deviceId);
         formData.append('targetDevice', 'all');
         formData.append('isFolder', 'false');
+        
+        // Ajouter les paramètres de sécurité
+        const togglePrivateCheckbox = document.getElementById('togglePrivate');
+        const customAccessCodeInput = document.getElementById('customAccessCode');
+        
+        if (togglePrivateCheckbox && togglePrivateCheckbox.checked) {
+            formData.append('isPrivate', 'true');
+            if (customAccessCodeInput && customAccessCodeInput.value.trim()) {
+                formData.append('accessCode', customAccessCodeInput.value.trim());
+            }
+        }
         
         const xhr = new XMLHttpRequest();
         
@@ -400,11 +435,12 @@ async function loadFiles() {
                         <h3>${file.filename}</h3>
                         <div class="file-meta">
                             ${formatFileSize(file.size)} • ${formatDate(file.uploadedAt)}
+                            ${file.isPrivate ? `<span style="margin-left:0.5rem; color:#dc2626; font-weight:500;">🔒 Privé (${file.accessCode})</span>` : ''}
                         </div>
                     </div>
                 </div>
                 <div class="file-actions">
-                    <button class="btn btn-primary" onclick="downloadFile('${file.id}', '${file.filename}')">
+                    <button class="btn btn-primary" onclick="downloadFile('${file.id}', '${file.filename}', ${file.isPrivate ? `'${file.accessCode}'` : 'null'})">
                         Télécharger
                     </button>
                         <button class="btn btn-success" onclick="generateShareLink('${file.id}')">
@@ -603,9 +639,34 @@ async function shareLink(id) {
 }
 
 // Télécharger un fichier
-async function downloadFile(fileId, filename) {
+async function downloadFile(fileId, filename, accessCode = null) {
     try {
-        window.location.href = `${window.location.origin}/api/download/${fileId}`;
+        // Si le fichier est privé, demander le code
+        let downloadUrl = `${window.location.origin}/api/download/${fileId}`;
+        
+        if (accessCode) {
+            downloadUrl += `?code=${accessCode}`;
+        } else {
+            // Vérifier d'abord si le fichier est privé
+            try {
+                const checkResponse = await fetch(downloadUrl);
+                if (checkResponse.status === 403) {
+                    const json = await checkResponse.json();
+                    if (json.requiresCode) {
+                        const code = prompt('Ce fichier est privé. Veuillez entrer le code d\'accès:');
+                        if (!code) {
+                            showNotification('❌ Téléchargement annulé', 'error');
+                            return;
+                        }
+                        downloadUrl += `?code=${code}`;
+                    }
+                }
+            } catch (e) {
+                console.error('Erreur vérification accès:', e);
+            }
+        }
+        
+        window.location.href = downloadUrl;
         showNotification('Téléchargement démarré', 'success');
     } catch (error) {
         console.error('Erreur téléchargement:', error);

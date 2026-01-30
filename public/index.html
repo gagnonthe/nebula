@@ -465,6 +465,21 @@
                     </div>
                     <p id="progressText" class="progress-text">Upload en cours…</p>
                 </div>
+
+                <!-- Sécurité & Confidentialité -->
+                <div style="margin-top:1.5rem; padding:1rem; background:#f9fafb; border-radius:0.375rem; border:1px solid #e5e7eb;">
+                    <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1rem;">
+                        <input type="checkbox" id="togglePrivate" style="cursor:pointer; width:1.125rem; height:1.125rem;">
+                        <label for="togglePrivate" style="cursor:pointer; font-weight:500; font-size:0.875rem;">🔒 Fichier privé (protégé par code)</label>
+                    </div>
+                    <div id="privateOptions" style="display:none; padding:0.75rem; background:#fff; border-radius:0.25rem; border:1px solid #e5e7eb;">
+                        <label style="display:block; font-size:0.875rem; margin-bottom:0.5rem; color:#6b7280;">
+                            Code d'accès (4 chiffres) - Laisser vide pour auto-générer:
+                        </label>
+                        <input type="text" id="customAccessCode" placeholder="1234" maxlength="4" style="width:100%; max-width:200px; padding:0.5rem; border:1px solid #d1d5db; border-radius:0.25rem; font-size:0.875rem;" />
+                        <p style="font-size:0.75rem; color:#9ca3af; margin-top:0.5rem;">Si vide: un code sera généré automatiquement lors de l'upload.</p>
+                    </div>
+                </div>
             </div>
         </section>
 
