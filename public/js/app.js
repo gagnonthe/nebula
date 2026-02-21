@@ -75,6 +75,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Configuration import texte & lien
     setupTextLinkImport();
+
+    // Configuration de la modal d'aperçu
+    setupPreviewModal();
 });
 
 // Toggle import section
@@ -231,6 +234,26 @@ function setupUpload() {
         const files = Array.from(e.dataTransfer.files);
         if (files.length > 0) {
             uploadMultipleFiles(files);
+        }
+    });
+}
+
+// Initialiser la modal d'aperçu
+function setupPreviewModal() {
+    const modal = document.getElementById('previewModal');
+    if (!modal) return;
+    
+    // Fermer la modal en cliquant en dehors du contenu
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closePreview();
+        }
+    });
+    
+    // Fermer avec la touche Échap
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+            closePreview();
         }
     });
 }
@@ -440,6 +463,9 @@ async function loadFiles() {
                     </div>
                 </div>
                 <div class="file-actions">
+                    <button class="btn btn-primary" onclick="previewFile('${file.id}', '${file.filename}', '${file.mimetype}', ${file.isPrivate ? `'${file.accessCode}'` : 'null'})">
+                        👁️ APERÇU
+                    </button>
                     <button class="btn btn-primary" onclick="downloadFile('${file.id}', '${file.filename}', ${file.isPrivate ? `'${file.accessCode}'` : 'null'})">
                         Télécharger
                     </button>
@@ -695,6 +721,102 @@ async function deleteFile(fileId) {
         console.error('Erreur suppression:', error);
         showNotification('Erreur lors de la suppression', 'error');
     }
+}
+
+// Aperçu des fichiers
+async function previewFile(fileId, filename, mimetype, accessCode = null) {
+    const modal = document.getElementById('previewModal');
+    const previewTitle = document.getElementById('previewTitle');
+    const previewContent = document.getElementById('previewContent');
+    
+    previewTitle.textContent = `Aperçu : ${filename}`;
+    previewContent.innerHTML = '<p style="text-align: center; color: #6b7280;">Chargement...</p>';
+    modal.classList.remove('hidden');
+    
+    try {
+        // Déterminer le type et charger le contenu approprié
+        const isImage = /image\/(jpg|jpeg|png|gif|webp|svg)/.test(mimetype);
+        const isText = /text\/|json|xml|markdown/.test(mimetype) || filename.match(/\.(txt|md|json|xml|csv)$/i);
+        const isPDF = mimetype === 'application/pdf' || filename.endsWith('.pdf');
+        const isAudio = /audio\//.test(mimetype);
+        const isVideo = /video\//.test(mimetype);
+        
+        if (isImage) {
+            // Aperçu image
+            let downloadUrl = `${API_URL}/api/download/${fileId}`;
+            if (accessCode) downloadUrl += `?code=${accessCode}`;
+            
+            previewContent.innerHTML = `
+                <div style="text-align: center;">
+                    <img src="${downloadUrl}" style="max-width: 100%; max-height: 400px; border-radius: 0.375rem; object-fit: contain;">
+                </div>
+            `;
+        } else if (isText) {
+            // Aperçu texte
+            let downloadUrl = `${API_URL}/api/download/${fileId}`;
+            if (accessCode) downloadUrl += `?code=${accessCode}`;
+            
+            const response = await fetch(downloadUrl);
+            const text = await response.text();
+            const preview = text.length > 5000 ? text.substring(0, 5000) + '\n\n... (fichier tronqué, téléchargez pour voir complet)' : text;
+            
+            previewContent.innerHTML = `
+                <pre style="background: #f3f4f6; padding: 1rem; border-radius: 0.375rem; overflow-x: auto; font-size: 0.813rem; max-height: 400px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word;">${escapeHtml(preview)}</pre>
+            `;
+        } else if (isPDF) {
+            // Aperçu PDF
+            previewContent.innerHTML = `
+                <p style="color: #6b7280; margin-bottom: 1rem;">📄 Les aperçus PDF s'ouvrent dans un nouvel onglet.</p>
+                <button onclick="window.open('${API_URL}/api/download/${fileId}${accessCode ? '?code=' + accessCode : ''}', '_blank')" style="background: #3b82f6; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 0.375rem; cursor: pointer;">
+                    Ouvrir le PDF
+                </button>
+            `;
+        } else if (isAudio || isVideo) {
+            // Lecteur média
+            const tag = isAudio ? 'audio' : 'video';
+            const controls = 'controls';
+            let downloadUrl = `${API_URL}/api/download/${fileId}`;
+            if (accessCode) downloadUrl += `?code=${accessCode}`;
+            
+            previewContent.innerHTML = `
+                <${tag} ${controls} style="width: 100%; max-height: 400px; border-radius: 0.375rem;">
+                    <source src="${downloadUrl}" type="${mimetype}">
+                    Votre navigateur ne supporte pas ce format média.
+                </${tag}>
+            `;
+        } else {
+            // Type non géré
+            previewContent.innerHTML = `
+                <div style="text-align: center; padding: 2rem;">
+                    <p style="color: #6b7280; margin-bottom: 1rem;">📦 Aperçu non disponible pour ce type de fichier</p>
+                    <p style="font-size: 0.875rem; color: #9ca3af; margin-bottom: 1.5rem;">Type: ${mimetype || 'inconnu'}</p>
+                    <button onclick="downloadFile('${fileId}', '${filename}', ${accessCode ? `'${accessCode}'` : 'null'})" style="background: #3b82f6; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 0.375rem; cursor: pointer;">
+                        Télécharger le fichier
+                    </button>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Erreur aperçu:', error);
+        previewContent.innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: #dc2626;">
+                <p>❌ Erreur lors du chargement de l'aperçu</p>
+                <p style="font-size: 0.875rem; margin-top: 0.5rem;">${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+function closePreview() {
+    const modal = document.getElementById('previewModal');
+    modal.classList.add('hidden');
+}
+
+// Fonction utilitaire pour échapper les caractères HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // Charger les appareils

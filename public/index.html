@@ -726,6 +726,22 @@
     <!-- Toast -->
     <div id="notification" class="hidden fixed top-16 right-4 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm shadow">Notification</div>
 
+    <!-- Modal d'aperçu des fichiers -->
+    <div id="previewModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="previewTitle">Aperçu du fichier</h3>
+                <button class="modal-close" onclick="closePreview()">✕</button>
+            </div>
+            <div class="modal-body" id="previewContent">
+                <!-- Le contenu sera inséré ici -->
+            </div>
+            <div style="padding: 1rem; border-top: 1px solid #e5e7eb; display: flex; gap: 0.5rem; justify-content: flex-end;">
+                <button onclick="closePreview()" style="background: #f3f4f6;">Fermer</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Socket.IO client -->
     <script src="/socket.io/socket.io.js"></script>
     <script src="/js/app.js"></script>
