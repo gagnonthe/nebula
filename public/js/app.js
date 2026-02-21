@@ -801,13 +801,37 @@ async function previewFile(fileId, filename, mimetype, accessCode = null) {
                 <pre style="background: #f3f4f6; padding: 1rem; border-radius: 0.375rem; overflow-x: auto; font-size: 0.813rem; max-height: 400px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word;">${escapeHtml(preview)}</pre>
             `;
         } else if (isPDF) {
-            // Aperçu PDF
-            previewContent.innerHTML = `
-                <p style="color: #6b7280; margin-bottom: 1rem;">📄 Les aperçus PDF s'ouvrent dans un nouvel onglet.</p>
-                <button onclick="window.open('${API_URL}/api/download/${fileId}${accessCode ? '?code=' + accessCode : ''}', '_blank')" style="background: #3b82f6; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 0.375rem; cursor: pointer;">
-                    Ouvrir le PDF
-                </button>
-            `;
+            // Aperçu PDF avec PDF.js
+            if (typeof pdfjsLib === 'undefined') {
+                previewContent.innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: #dc2626;">
+                        <p>❌ PDF.js non chargé</p>
+                        <button onclick="window.open('${API_URL}/api/download/${fileId}${accessCode ? '?code=' + accessCode : ''}', '_blank')" style="background: #3b82f6; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 0.375rem; cursor: pointer; margin-top: 1rem;">
+                            Ouvrir dans un nouvel onglet
+                        </button>
+                    </div>
+                `;
+            } else {
+                // Initialiser le visionnage PDF
+                let downloadUrl = `${API_URL}/api/download/${fileId}`;
+                if (accessCode) downloadUrl += `?code=${accessCode}`;
+                
+                previewContent.innerHTML = `
+                    <div id="pdfViewer" style="background: #f3f4f6; border-radius: 0.375rem;">
+                        <div style="height: 400px; display: flex; align-items: center; justify-content: center;">
+                            <p style="color: #6b7280;">Chargement du PDF...</p>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: center; align-items: center;">
+                        <button id="pdfPrevBtn" onclick="previousPDFPage()" style="padding: 0.5rem 1rem; background: #e5e7eb; border: none; border-radius: 0.375rem; cursor: pointer;">← Précédent</button>
+                        <span id="pdfPageInfo" style="font-size: 0.875rem; color: #6b7280; min-width: 120px; text-align: center;">Page 1</span>
+                        <button id="pdfNextBtn" onclick="nextPDFPage()" style="padding: 0.5rem 1rem; background: #e5e7eb; border: none; border-radius: 0.375rem; cursor: pointer;">Suivant →</button>
+                    </div>
+                `;
+                
+                // Charger le PDF
+                await loadAndDisplayPDF(downloadUrl);
+            }
         } else if (isAudio || isVideo) {
             // Lecteur média
             const tag = isAudio ? 'audio' : 'video';
@@ -847,6 +871,97 @@ async function previewFile(fileId, filename, mimetype, accessCode = null) {
 function closePreview() {
     const modal = document.getElementById('previewModal');
     modal.classList.add('hidden');
+    // Nettoyer le PDF chargé
+    window.currentPDFDoc = null;
+    window.currentPDFPage = 1;
+}
+
+// Variables globales pour le visionnage PDF
+window.currentPDFDoc = null;
+window.currentPDFPage = 1;
+
+// Charger et afficher un PDF
+async function loadAndDisplayPDF(pdfUrl) {
+    try {
+        const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
+        window.currentPDFDoc = pdf;
+        window.currentPDFPage = 1;
+        
+        // Afficher la première page
+        await renderPDFPage(1);
+        
+        // Mettre à jour les contrôles
+        updatePDFControls();
+    } catch (error) {
+        console.error('Erreur chargement PDF:', error);
+        const previewContent = document.getElementById('previewContent');
+        previewContent.innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: #dc2626;">
+                <p>❌ Erreur lors du chargement du PDF</p>
+                <p style="font-size: 0.875rem; margin-top: 0.5rem;">${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+// Afficher une page PDF
+async function renderPDFPage(pageNum) {
+    if (!window.currentPDFDoc || pageNum < 1 || pageNum > window.currentPDFDoc.numPages) {
+        return;
+    }
+    
+    try {
+        const page = await window.currentPDFDoc.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 1.5 });
+        
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        canvas.style.maxWidth = '100%';
+        canvas.style.borderRadius = '0.375rem';
+        canvas.style.display = 'block';
+        canvas.style.margin = '0 auto';
+        
+        await page.render({ canvasContext: context, viewport }).promise;
+        
+        const pdfViewer = document.getElementById('pdfViewer');
+        pdfViewer.innerHTML = '';
+        pdfViewer.appendChild(canvas);
+        
+        window.currentPDFPage = pageNum;
+        updatePDFControls();
+    } catch (error) {
+        console.error('Erreur rendu page:', error);
+    }
+}
+
+// Mettre à jour les contrôles de navigation
+function updatePDFControls() {
+    if (!window.currentPDFDoc) return;
+    
+    const pageInfo = document.getElementById('pdfPageInfo');
+    const prevBtn = document.getElementById('pdfPrevBtn');
+    const nextBtn = document.getElementById('pdfNextBtn');
+    
+    if (pageInfo) pageInfo.textContent = `Page ${window.currentPDFPage} / ${window.currentPDFDoc.numPages}`;
+    if (prevBtn) prevBtn.disabled = window.currentPDFPage <= 1;
+    if (nextBtn) nextBtn.disabled = window.currentPDFPage >= window.currentPDFDoc.numPages;
+}
+
+// Navigation PDF
+function previousPDFPage() {
+    if (!window.currentPDFDoc) return;
+    if (window.currentPDFPage > 1) {
+        renderPDFPage(window.currentPDFPage - 1);
+    }
+}
+
+function nextPDFPage() {
+    if (!window.currentPDFDoc) return;
+    if (window.currentPDFPage < window.currentPDFDoc.numPages) {
+        renderPDFPage(window.currentPDFPage + 1);
+    }
 }
 
 // Fonction utilitaire pour échapper les caractères HTML
@@ -1322,5 +1437,7 @@ function showNotification(message, type = 'success') {
     window.toggleImportSection = toggleImportSection;
     window.previewFile = previewFile;
     window.closePreview = closePreview;
+    window.previousPDFPage = previousPDFPage;
+    window.nextPDFPage = nextPDFPage;
 
     })();
