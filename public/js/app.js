@@ -45,13 +45,19 @@ function getDeviceType() {
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', async () => {
-    // Enregistrer le service worker
+    // Enregistrer le service worker (avec protection contre les enregistrements multiples)
     if ('serviceWorker' in navigator) {
         try {
-            await navigator.serviceWorker.register('/sw.js');
-            console.log('Service Worker enregistré');
+            // Vérifier que le fichier existe d'abord
+            const swResponse = await fetch('/sw.js', { method: 'HEAD' });
+            if (swResponse.ok) {
+                const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+                console.log('✅ Service Worker enregistré avec succès');
+            } else {
+                console.warn('⚠️ Service Worker: fichier sw.js non trouvé (404)');
+            }
         } catch (error) {
-            console.error('Erreur Service Worker:', error);
+            console.warn('⚠️ Service Worker non disponible (non-bloquant):', error.message);
         }
     }
 
@@ -1314,5 +1320,7 @@ function showNotification(message, type = 'success') {
     window.downloadFile = downloadFile;
     window.deleteFile = deleteFile;
     window.toggleImportSection = toggleImportSection;
+    window.previewFile = previewFile;
+    window.closePreview = closePreview;
 
     })();

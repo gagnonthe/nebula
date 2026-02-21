@@ -2,7 +2,6 @@ const CACHE_NAME = 'file-share-v17';
 const urlsToCache = [
   '/',
   '/index.html',
-  '/css/style.css',
   '/js/app.js',
   '/manifest.json'
 ];
@@ -13,9 +12,21 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('Cache ouvert');
-        return cache.addAll(urlsToCache);
+        // Ajouter les fichiers avec gestion d'erreur pour éviter l'abort
+        return Promise.all(
+          urlsToCache.map(url => {
+            return cache.add(url).catch(err => {
+              console.warn(`Impossible de mettre en cache ${url}:`, err.message);
+            });
+          })
+        );
+      })
+      .catch(err => {
+        console.error('Erreur cache install:', err);
       })
   );
+  // Forcer le service worker à devenir actif immédiatement
+  self.skipWaiting();
 });
 
 // Activation du service worker
@@ -32,6 +43,8 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
+  // Prendre le contrôle des clients immédiatement
+  self.clients.claim();
 });
 
 // Interception des requêtes
