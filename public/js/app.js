@@ -78,6 +78,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Configuration de la modal d'aperçu
     setupPreviewModal();
+
+    // Configuration du presse-papiers
+    setupClipboard();
 });
 
 // Toggle import section
@@ -254,6 +257,34 @@ function setupPreviewModal() {
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
             closePreview();
+        }
+    });
+}
+
+// Initialiser le presse-papiers
+function setupClipboard() {
+    document.addEventListener('paste', async (e) => {
+        // Récupérer les fichiers du presse-papiers
+        const items = e.clipboardData?.items;
+        if (!items || items.length === 0) return;
+        
+        const files = [];
+        
+        // Parcourir les éléments du presse-papiers
+        for (let item of items) {
+            if (item.kind === 'file') {
+                const file = item.getAsFile();
+                if (file) {
+                    files.push(file);
+                }
+            }
+        }
+        
+        // Si des fichiers ont été trouvés, les uploader
+        if (files.length > 0) {
+            console.log(`📋 ${files.length} fichier(s) collé(s) depuis le presse-papiers`);
+            uploadMultipleFiles(files);
+            showNotification(`📋 ${files.length} fichier(s) colléé(s) - Upload en cours...`, 'success');
         }
     });
 }
