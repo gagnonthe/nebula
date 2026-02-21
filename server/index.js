@@ -340,24 +340,31 @@ app.post('/api/upload', upload.array('files', 500), async (req, res) => {
 });
 
 // Route alternative pour upload SINGLE file (pour raccourcis iOS qui envoient 'file' au singulier)
-app.post('/api/upload-single', upload.single('file'), async (req, res) => {
+// Utilise upload.any() pour accepter n'importe quel nom de champ
+app.post('/api/upload-single', upload.any(), async (req, res) => {
   console.log('📥 [UPLOAD-SINGLE] Requête reçue');
   console.log('📥 [UPLOAD-SINGLE] Headers:', JSON.stringify(req.headers, null, 2));
   console.log('📥 [UPLOAD-SINGLE] Body keys:', Object.keys(req.body));
-  console.log('📥 [UPLOAD-SINGLE] File:', req.file ? { name: req.file.originalname, size: req.file.size } : null);
+  console.log('📥 [UPLOAD-SINGLE] req.files (DIAGNOSTIC):', req.files);
+  console.log('📥 [UPLOAD-SINGLE] req.files détails:', req.files ? req.files.map(f => ({ fieldname: f.fieldname, originalname: f.originalname, size: f.size })) : 'Aucun');
   
   try {
-    const uploadedFile = req.file;
+    // Avec upload.any(), les fichiers sont dans req.files (array)
+    const uploadedFile = req.files && req.files.length > 0 ? req.files[0] : null;
     
     if (!uploadedFile) {
       console.log('❌ [UPLOAD-SINGLE] Aucun fichier reçu');
+      console.log('❌ [UPLOAD-SINGLE] req.files:', req.files);
+      console.log('❌ [UPLOAD-SINGLE] req.body:', req.body);
       return res.status(400).json({ 
         error: 'No file uploaded',
-        hint: 'Le champ attendu est "file" (singulier)'
+        hint: 'Aucun fichier détecté. Vérifiez que le formulaire contient bien un fichier.',
+        receivedFiles: req.files ? req.files.length : 0
       });
     }
     
-    console.log('✅ [UPLOAD-SINGLE] Fichier reçu:', uploadedFile.originalname, uploadedFile.size, 'bytes');
+    console.log('✅ [UPLOAD-SINGLE] Fichier reçu via champ:', uploadedFile.fieldname);
+    console.log('✅ [UPLOAD-SINGLE] Nom du fichier:', uploadedFile.originalname, uploadedFile.size, 'bytes');
     
     const { deviceId, targetDevice, isPrivate, accessCode } = req.body;
     const fileId = uuidv4();
