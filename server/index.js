@@ -21,9 +21,17 @@ const io = socketIo(server, {
 const PORT = process.env.PORT || 3000;
 const UPLOAD_DIR = path.join(__dirname, '../uploads');
 
-// Créer le dossier uploads s'il n'existe pas
-if (!fs.existsSync(UPLOAD_DIR)) {
-  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+// Créer le dossier uploads s'il n'existe pas (sécurisé)
+try {
+  if (!fs.existsSync(UPLOAD_DIR)) {
+    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+    console.log('✅ Dossier uploads/ créé:', UPLOAD_DIR);
+  } else {
+    console.log('✅ Dossier uploads/ existe déjà:', UPLOAD_DIR);
+  }
+} catch (err) {
+  console.error('❌ ERREUR création dossier uploads:', err);
+  process.exit(1); // Arrêter le serveur si on ne peut pas créer le dossier
 }
 
 // Configuration de stockage
@@ -187,12 +195,20 @@ function generateAccessCode() {
 
 // Upload de fichier(s) avec support ZIP pour dossiers
 app.post('/api/upload', upload.array('files', 500), async (req, res) => {
+  console.log('📥 [UPLOAD] Requête reçue');
+  console.log('📥 [UPLOAD] Headers:', JSON.stringify(req.headers, null, 2));
+  console.log('📥 [UPLOAD] Body keys:', Object.keys(req.body));
+  console.log('📥 [UPLOAD] Files:', req.files ? req.files.length : 0);
+  
   try {
     const uploadedFiles = req.files;
     
     if (!uploadedFiles || uploadedFiles.length === 0) {
+      console.log('❌ [UPLOAD] Aucun fichier reçu');
       return res.status(400).json({ error: 'No files uploaded' });
     }
+    
+    console.log('✅ [UPLOAD] Fichiers reçus:', uploadedFiles.map(f => ({ name: f.originalname, size: f.size })));
 
     const { deviceId, targetDevice, folderName, isFolder, isPrivate, accessCode } = req.body;
     
@@ -313,9 +329,104 @@ app.post('/api/upload', upload.array('files', 500), async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Upload error:', error);
-    res.status(500).json({ error: 'Upload failed' });
+    console.error('❌ [UPLOAD] Erreur serveur:', error);
+    console.error('❌ [UPLOAD] Stack:', error.stack);
+    res.status(500).json({ 
+      error: 'Upload failed', 
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
+});
+
+// Route alternative pour upload SINGLE file (pour raccourcis iOS qui envoient 'file' au singulier)
+app.post('/api/upload-single', upload.single('file'), async (req, res) => {
+  console.log('📥 [UPLOAD-SINGLE] Requête reçue');
+  console.log('📥 [UPLOAD-SINGLE] Headers:', JSON.stringify(req.headers, null, 2));
+  console.log('📥 [UPLOAD-SINGLE] Body keys:', Object.keys(req.body));
+  console.log('📥 [UPLOAD-SINGLE] File:', req.file ? { name: req.file.originalname, size: req.file.size } : null);
+  
+  try {
+    const uploadedFile = req.file;
+    
+    if (!uploadedFile) {
+      console.log('❌ [UPLOAD-SINGLE] Aucun fichier reçu');
+      return res.status(400).json({ 
+        error: 'No file uploaded',
+        hint: 'Le champ attendu est "file" (singulier)'
+      });
+    }
+    
+    console.log('✅ [UPLOAD-SINGLE] Fichier reçu:', uploadedFile.originalname, uploadedFile.size, 'bytes');
+    
+    const { deviceId, targetDevice, isPrivate, accessCode } = req.body;
+    const fileId = uuidv4();
+    
+    totalUploads++;
+    
+    const fileData = {
+      id: fileId,
+      filename: uploadedFile.originalname,
+      storedName: uploadedFile.filename,
+      size: uploadedFile.size,
+      mimetype: uploadedFile.mimetype,
+      uploadedBy: deviceId || 'ios-shortcut',
+      targetDevice: targetDevice || 'all',
+      uploadedAt: new Date(),
+      path: uploadedFile.path,
+      isPrivate: isPrivate === 'true',
+      accessCode: isPrivate === 'true' ? (accessCode || generateAccessCode()) : null
+    };
+
+    files.set(fileId, fileData);
+    
+    console.log('✅ [UPLOAD-SINGLE] Fichier enregistré:', fileId);
+
+    // Notifier via WebSocket
+    io.emit('file-uploaded', {
+      fileId,
+      filename: fileData.filename,
+      size: fileData.size,
+      uploadedBy: fileData.uploadedBy,
+      targetDevice: fileData.targetDevice
+    });
+
+    res.json({
+      success: true,
+      fileId,
+      filename: fileData.filename,
+      downloadUrl: `/api/download/${fileId}`,
+      accessCode: fileData.accessCode || null
+    });
+  } catch (error) {
+    console.error('❌ [UPLOAD-SINGLE] Erreur serveur:', error);
+    console.error('❌ [UPLOAD-SINGLE] Stack:', error.stack);
+    res.status(500).json({ 
+      error: 'Upload failed', 
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
+// Gestionnaire d'erreur Multer global
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    console.error('❌ [MULTER] Erreur Multer:', err.code, err.message);
+    return res.status(400).json({ 
+      error: 'Multer error',
+      code: err.code,
+      message: err.message,
+      hint: err.field ? `Champ problématique: ${err.field}` : 'Vérifiez le nom du champ'
+    });
+  } else if (err) {
+    console.error('❌ [ERROR] Erreur middleware:', err);
+    return res.status(500).json({ 
+      error: 'Server error',
+      message: err.message
+    });
+  }
+  next();
 });
 
 // Liste des fichiers
