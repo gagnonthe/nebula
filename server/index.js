@@ -416,10 +416,142 @@ app.post('/api/upload-single', upload.any(), async (req, res) => {
   }
 });
 
-// Gestionnaire d'erreur Multer global
+// ==================== ROUTE POUR UPLOAD iOS ====================
+// Middleware de diagnostic pour capturer les données brutes AVANT Multer
+app.post('/api/upload-ios', (req, res, next) => {
+  console.log('📱 [iOS-UPLOAD] ===== DIAGNOSTIC COMPLET =====');
+  console.log('📱 [iOS-UPLOAD] Content-Type:', req.get('content-type'));
+  console.log('📱 [iOS-UPLOAD] Content-Length:', req.get('content-length'));
+  console.log('📱 [iOS-UPLOAD] Tous les headers:', JSON.stringify(req.headers, null, 2));
+  console.log('📱 [iOS-UPLOAD] URL:', req.url);
+  console.log('📱 [iOS-UPLOAD] Method:', req.method);
+  
+  // Capturer les données brutes pour debug
+  let rawData = '';
+  req.on('data', chunk => {
+    rawData += chunk.toString().slice(0, 500); // Limiter à 500 chars
+  });
+  
+  req.on('end', () => {
+    if (rawData) {
+      console.log('📱 [iOS-UPLOAD] Données brutes reçues (premiers 500 chars):', rawData);
+    }
+  });
+  
+  // Appeler le middleware Multer
+  next();
+}, 
+// Multer avec upload.any() pour maximum de flexibilité
+upload.any(),
+async (req, res) => {
+  console.log('📱 [iOS-UPLOAD] Après Multer:');
+  console.log('📱 [iOS-UPLOAD] req.files:', req.files);
+  if (req.files && req.files.length > 0) {
+    console.log('📱 [iOS-UPLOAD] Détails fichiers:', req.files.map(f => ({
+      fieldname: f.fieldname,
+      originalname: f.originalname,
+      encoding: f.encoding,
+      mimetype: f.mimetype,
+      size: f.size,
+      destination: f.destination,
+      filename: f.filename
+    })));
+  }
+  console.log('📱 [iOS-UPLOAD] req.body:', req.body);
+  
+  try {
+    const uploadedFile = req.files && req.files.length > 0 ? req.files[0] : null;
+    
+    if (!uploadedFile) {
+      console.log('❌ [iOS-UPLOAD] ERREUR: Aucun fichier reçu');
+      return res.status(400).json({ 
+        error: 'No file uploaded',
+        debug: {
+          filesReceived: req.files ? req.files.length : 0,
+          bodyKeys: Object.keys(req.body),
+          contentType: req.get('content-type')
+        }
+      });
+    }
+    
+    console.log('✅ [iOS-UPLOAD] Fichier détecté:', uploadedFile.originalname);
+    
+    const { deviceId, targetDevice, isPrivate, accessCode } = req.body;
+    const fileId = uuidv4();
+    
+    totalUploads++;
+    
+    const fileData = {
+      id: fileId,
+      filename: uploadedFile.originalname,
+      storedName: uploadedFile.filename,
+      size: uploadedFile.size,
+      mimetype: uploadedFile.mimetype,
+      uploadedBy: deviceId || 'ios-shortcut',
+      targetDevice: targetDevice || 'all',
+      uploadedAt: new Date(),
+      path: uploadedFile.path,
+      isPrivate: isPrivate === 'true',
+      accessCode: isPrivate === 'true' ? (accessCode || generateAccessCode()) : null
+    };
+
+    files.set(fileId, fileData);
+    
+    console.log('✅ [iOS-UPLOAD] Fichier enregistré:', fileId);
+
+    // Notifier via WebSocket
+    io.emit('file-uploaded', {
+      fileId,
+      filename: fileData.filename,
+      size: fileData.size,
+      uploadedBy: fileData.uploadedBy,
+      targetDevice: fileData.targetDevice
+    });
+
+    res.json({
+      success: true,
+      fileId,
+      filename: fileData.filename,
+      downloadUrl: `/api/download/${fileId}`,
+      accessCode: fileData.accessCode || null,
+      debug: {
+        uploadedViaField: uploadedFile.fieldname,
+        message: 'File uploaded successfully via iOS shortcut'
+      }
+    });
+  } catch (error) {
+    console.error('❌ [iOS-UPLOAD] Erreur serveur:', error);
+    console.error('❌ [iOS-UPLOAD] Stack:', error.stack);
+    res.status(500).json({ 
+      error: 'Upload failed', 
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
+// Gestionnaire d'erreur Multer global (doit être APRÈS toutes les routes)
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     console.error('❌ [MULTER] Erreur Multer:', err.code, err.message);
+    console.error('❌ [MULTER] Champ problématique:', err.field);
+    console.error('❌ [MULTER] URL:', req.url);
+    console.error('❌ [MULTER] Headers:', JSON.stringify(req.headers, null, 2));
+    
+    // Si c'est une erreur de champ inattendu, proposer les solutions
+    if (err.code === 'LIMIT_UNEXPECTED_FILE' || err.code === 'LIMIT_UNEXPECTED_FILES') {
+      return res.status(400).json({ 
+        error: 'Unexpected file field',
+        code: err.code,
+        message: `Le serveur n'attendait pas de fichier avec le champ "${err.field}". Essaie avec:`,
+        solutions: [
+          'Route alternative: POST /api/upload-ios (plus flexible)',
+          'Ou change le nom du champ dans ton Raccourci iOS pour qu\'il s\'appelle "files" (pluriel)'
+        ],
+        receivedField: err.field
+      });
+    }
+    
     return res.status(400).json({ 
       error: 'Multer error',
       code: err.code,
