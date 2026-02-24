@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Vérifier que le fichier existe d'abord
             const swResponse = await fetch('/sw.js', { method: 'HEAD' });
             if (swResponse.ok) {
-                const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+                await navigator.serviceWorker.register('/sw.js', { scope: '/' });
                 console.log('✅ Service Worker enregistré avec succès');
             } else {
                 console.warn('⚠️ Service Worker: fichier sw.js non trouvé (404)');
@@ -274,23 +274,23 @@ function setupClipboard() {
         const items = e.clipboardData?.items;
         if (!items || items.length === 0) return;
         
-        const files = [];
+        const clipboardFiles = [];
         
         // Parcourir les éléments du presse-papiers
         for (let item of items) {
             if (item.kind === 'file') {
                 const file = item.getAsFile();
                 if (file) {
-                    files.push(file);
+                    clipboardFiles.push(file);
                 }
             }
         }
         
         // Si des fichiers ont été trouvés, les uploader
-        if (files.length > 0) {
-            console.log(`📋 ${files.length} fichier(s) collé(s) depuis le presse-papiers`);
-            uploadMultipleFiles(files);
-            showNotification(`📋 ${files.length} fichier(s) colléé(s) - Upload en cours...`, 'success');
+        if (clipboardFiles.length > 0) {
+            console.log(`📋 ${clipboardFiles.length} fichier(s) collé(s) depuis le presse-papiers`);
+            uploadMultipleFiles(clipboardFiles);
+            showNotification(`📋 ${clipboardFiles.length} fichier(s) colléé(s) - Upload en cours...`, 'success');
         }
     });
 }
@@ -785,7 +785,7 @@ async function previewFile(fileId, filename, mimetype, accessCode = null) {
             
             previewContent.innerHTML = `
                 <div style="text-align: center;">
-                    <img src="${downloadUrl}" style="max-width: 100%; max-height: 400px; border-radius: 0.375rem; object-fit: contain;">
+                    <img src="${downloadUrl}" alt="Aperçu de ${filename}" style="max-width: 100%; max-height: 400px; border-radius: 0.375rem; object-fit: contain;">
                 </div>
             `;
         } else if (isText) {
@@ -1007,6 +1007,109 @@ async function handleDeviceCommand(payload) {
         return;
     }
 
+    // 🎨 Écran de couleur
+    if (action === 'screen-color') {
+        window.screenColor(command.color || '#000000');
+        showNotification('🎨 Écran de couleur appliqué', 'success');
+        return;
+    }
+
+    // 🖼️ Afficher une image
+    if (action === 'display-image') {
+        window.displayImage(command.imageUrl);
+        showNotification('🖼️ Image affichée', 'success');
+        return;
+    }
+
+    // 💬 Message géant
+    if (action === 'giant-message') {
+        window.giantMessage(command.message, command.style || 'normal');
+        showNotification('💬 Message affiché', 'success');
+        return;
+    }
+
+    // ✨ Effets visuels
+    if (action === 'effect-matrix') {
+        window.effectMatrix();
+        showNotification('🟢 Effet Matrix activé', 'success');
+        return;
+    }
+
+    if (action === 'effect-glitch') {
+        window.effectGlitch();
+        showNotification('📺 Effet Glitch activé', 'success');
+        return;
+    }
+
+    if (action === 'effect-shake') {
+        window.effectShake();
+        showNotification('📳 Écran secoué', 'success');
+        return;
+    }
+
+    if (action === 'effect-rotate') {
+        window.effectRotate();
+        showNotification('🔄 Rotation activée', 'success');
+        return;
+    }
+
+    if (action === 'effect-rainbow') {
+        window.effectRainbow();
+        showNotification('🌈 Arc-en-ciel activé', 'success');
+        return;
+    }
+
+    if (action === 'effect-disco') {
+        window.effectDisco();
+        showNotification('🪩 Mode Disco activé', 'success');
+        return;
+    }
+
+    if (action === 'effect-spin') {
+        window.effectSpin();
+        showNotification('🌀 Spin activé', 'success');
+        return;
+    }
+
+    if (action === 'effect-flip') {
+        window.effectFlip();
+        showNotification('🔃 Flip activé', 'success');
+        return;
+    }
+
+    if (action === 'effect-bounce') {
+        window.effectBounce();
+        showNotification('⛹️ Rebond activé', 'success');
+        return;
+    }
+
+    if (action === 'effect-chaos') {
+        window.effectChaos();
+        showNotification('💥 MODE CHAOS ACTIVÉ', 'success');
+        return;
+    }
+
+    // ❌ Effacer overlay
+    if (action === 'clear-overlay') {
+        window.clearFunEffects();
+        showNotification('✅ Effets effacés', 'success');
+        return;
+    }
+
+    // 💬 Alerte système
+    if (action === 'alert') {
+        alert(command.message || 'Message de l\'admin');
+        return;
+    }
+
+    // 🔄 Recharger la page
+    if (action === 'reload-page') {
+        showNotification('🔄 Rechargement...', 'success');
+        setTimeout(() => window.location.reload(), 1000);
+        return;
+    }
+
+    // 📳 Vibration (ancienne commande)
     if (action === 'vibrate') {
         const pattern = command.pattern || 'short';
         const ok = vibrateDevice(pattern);
@@ -1014,6 +1117,7 @@ async function handleDeviceCommand(payload) {
         return;
     }
 
+    // 🔦 Lampe (ancienne commande)
     if (action === 'torch-on' || action === 'torch-off') {
         const desired = action === 'torch-on';
         const result = await setTorch(desired);
@@ -1025,6 +1129,7 @@ async function handleDeviceCommand(payload) {
         return;
     }
 
+    // 🔊 Bip (ancienne commande)
     if (action === 'beep') {
         const ok = await playBeep(command.durationMs || 200, command.frequency || 880);
         showNotification(ok ? '🔊 Bip joué' : '❌ Son indisponible', ok ? 'success' : 'error');

@@ -32,16 +32,20 @@ self.addEventListener('install', (event) => {
 // Activation du service worker
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Suppression ancien cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
+    caches.keys()
+      .then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (cacheName !== CACHE_NAME) {
+              console.log('Suppression ancien cache:', cacheName);
+              return caches.delete(cacheName);
+            }
+          })
+        );
+      })
+      .catch((err) => {
+        console.error('Erreur activation:', err);
+      })
   );
   // Prendre le contrôle des clients immédiatement
   self.clients.claim();
@@ -58,23 +62,36 @@ self.addEventListener('fetch', (event) => {
         }
 
         // Sinon, faire la requête réseau
-        return fetch(event.request).then((response) => {
-          // Ne pas mettre en cache les requêtes non-GET ou les API
-          if (event.request.method !== 'GET' || 
-              event.request.url.includes('/api/')) {
+        return fetch(event.request)
+          .then((response) => {
+            // Ne pas mettre en cache les requêtes non-GET ou les API
+            if (event.request.method !== 'GET' || 
+                event.request.url.includes('/api/')) {
+              return response;
+            }
+
+            // Cloner la réponse
+            const responseToCache = response.clone();
+
+            caches.open(CACHE_NAME)
+              .then((cache) => {
+                cache.put(event.request, responseToCache);
+              })
+              .catch((err) => {
+                console.warn('Erreur cache:', err);
+              });
+
             return response;
-          }
-
-          // Cloner la réponse
-          const responseToCache = response.clone();
-
-          caches.open(CACHE_NAME)
-            .then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-
-          return response;
-        });
+          })
+          .catch((err) => {
+            console.error('Erreur requête réseau:', err);
+            // Retourner une réponse d'erreur
+            return new Response('Erreur réseau', { status: 500 });
+          });
+      })
+      .catch((err) => {
+        console.error('Erreur cache match:', err);
+        return new Response('Erreur cache', { status: 500 });
       })
   );
 });

@@ -478,3 +478,152 @@ button:active {
     font-family: monospace;
     word-break: break-all;
 }
+
+/* Privacy Options */
+.privacy-options {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: #f3f4f6;
+    border-radius: 0.375rem;
+}
+
+.privacy-options label {
+    display: flex;
+    align-items: center;
+    font-size: 0.875rem;
+    cursor: pointer;
+    color: #374151;
+}
+
+.privacy-options input[type="checkbox"] {
+    margin-right: 0.5rem;
+    cursor: pointer;
+    width: auto;
+}
+
+#accessCodeContainer {
+    margin-top: 0.5rem;
+}
+
+#accessCodeContainer .input {
+    font-size: 0.875rem;
+    padding: 0.5rem;
+}
+
+#accessCodeContainer p {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+}
+
+/* Preview Modal Styles */
+.modal-content h3 {
+    font-size: 0.938rem;
+    font-weight: 600;
+    color: #111;
+    margin: 0;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0;
+    width: auto;
+    color: #6b7280;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    color: #111;
+    background: none;
+}
+
+.modal-footer {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.modal-footer button {
+    width: auto;
+    padding: 0.5rem 1rem;
+}
+
+/* Preview button specific styles */
+.btn-preview {
+    background: #f3f4f6;
+    color: #374151;
+    border-color: #d1d5db;
+}
+
+.btn-preview:hover {
+    background: #e5e7eb;
+}
+
+/* File actions buttons layout */
+.file-actions {
+    display: flex;
+    gap: 0.375rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.file-actions .btn-preview {
+    flex: 1;
+    min-width: 80px;
+    font-size: 0.813rem;
+}
+
+.file-actions .btn-primary {
+    flex: 1;
+    min-width: 90px;
+    font-size: 0.813rem;
+}
+
+.file-actions .btn-danger {
+    flex: 0 1 auto;
+    min-width: 80px;
+    font-size: 0.813rem;
+}
+
+/* Larger modal for preview */
+#previewModal .modal-content {
+    max-width: 380px;
+}
+
+#previewModal .modal-body {
+    padding: 1rem;
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+/* PDF Viewer styles */
+#pdfViewer {
+    min-height: 280px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#pdfViewer canvas {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Scrollbar for preview content */
+#previewContent::-webkit-scrollbar {
+    width: 6px;
+}
+
+#previewContent::-webkit-scrollbar-track {
+    background: #f9fafb;
+}
+
+#previewContent::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 3px;
+}

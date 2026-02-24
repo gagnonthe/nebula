@@ -596,7 +596,7 @@ app.get('/api/files', (req, res) => {
 });
 
 // Télécharger un fichier
-app.get('/api/download/:fileId', (req, res) => {
+app.get('/api/download/:fileId', async (req, res) => {
   const { fileId } = req.params;
   const { code } = req.query;
   const file = files.get(fileId);
@@ -612,15 +612,17 @@ app.get('/api/download/:fileId', (req, res) => {
     }
   }
 
-  if (!fs.existsSync(file.path)) {
+  try {
+    // Vérifier l'accès au fichier de manière asynchrone
+    await fs.promises.access(file.path, fs.constants.F_OK);
+    res.download(file.path, file.filename);
+  } catch (err) {
     return res.status(404).json({ error: 'File not found on disk' });
   }
-
-  res.download(file.path, file.filename);
 });
 
 // Supprimer un fichier
-app.delete('/api/files/:fileId', (req, res) => {
+app.delete('/api/files/:fileId', async (req, res) => {
   const { fileId } = req.params;
   const file = files.get(fileId);
 
@@ -629,8 +631,12 @@ app.delete('/api/files/:fileId', (req, res) => {
   }
 
   // Supprimer le fichier du disque
-  if (fs.existsSync(file.path)) {
-    fs.unlinkSync(file.path);
+  try {
+    await fs.promises.unlink(file.path);
+  } catch (err) {
+    if (err.code !== 'ENOENT') {
+      console.error('❌ Error deleting file:', err);
+    }
   }
 
   files.delete(fileId);
@@ -709,19 +715,23 @@ io.on('connection', (socket) => {
 });
 
 // Nettoyer les vieux fichiers toutes les heures
-setInterval(() => {
+setInterval(async () => {
   const now = new Date();
   const ONE_HOUR = 60 * 60 * 1000;
 
-  files.forEach((file, fileId) => {
+  for (const [fileId, file] of files.entries()) {
     if (now - file.uploadedAt > ONE_HOUR) {
-      if (fs.existsSync(file.path)) {
-        fs.unlinkSync(file.path);
+      try {
+        await fs.promises.unlink(file.path);
+      } catch (err) {
+        if (err.code !== 'ENOENT') {
+          console.error('❌ Error cleaning file:', err);
+        }
       }
       files.delete(fileId);
       io.emit('file-deleted', { fileId });
     }
-  });
+  }
 }, 60 * 60 * 1000);
 
   // Admin API endpoints
@@ -826,44 +836,44 @@ setInterval(() => {
   });
 
   // Delete old files (7+ days)
-  app.post('/api/admin/cleanup/old', (req, res) => {
+  app.post('/api/admin/cleanup/old', async (req, res) => {
     const now = Date.now();
     const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
     let deleted = 0;
   
-    files.forEach((file, fileId) => {
+    for (const [fileId, file] of files.entries()) {
       if (now - new Date(file.uploadedAt).getTime() > SEVEN_DAYS) {
         try {
-          if (fs.existsSync(file.path)) {
-            fs.unlinkSync(file.path);
-          }
+          await fs.promises.unlink(file.path);
           files.delete(fileId);
           io.emit('file-deleted', { fileId });
           deleted++;
         } catch (error) {
-          console.error('Error deleting file:', error);
+          if (error.code !== 'ENOENT') {
+            console.error('Error deleting file:', error);
+          }
         }
       }
-    });
+    }
   
     res.json({ deleted });
   });
 
   // Delete all files
-  app.post('/api/admin/cleanup/all', (req, res) => {
+  app.post('/api/admin/cleanup/all', async (req, res) => {
     let deleted = 0;
   
-    files.forEach((file, fileId) => {
+    for (const [fileId, file] of files.entries()) {
       try {
-        if (fs.existsSync(file.path)) {
-          fs.unlinkSync(file.path);
-        }
+        await fs.promises.unlink(file.path);
         files.delete(fileId);
         deleted++;
       } catch (error) {
-        console.error('Error deleting file:', error);
+        if (error.code !== 'ENOENT') {
+          console.error('Error deleting file:', error);
+        }
       }
-    });
+    }
   
     io.emit('all-files-deleted');
     res.json({ deleted });

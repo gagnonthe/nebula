@@ -606,9 +606,9 @@
                 <!-- Commands Tab -->
                 <div id="commandsTab" class="tab-content">
                     <div style="padding: 1rem; border-bottom: 1px solid #374151;">
-                        <h2>Contrôles des appareils</h2>
+                        <h2>🎮 Contrôles Fun - Takeover Mode</h2>
                         <p class="text-xs text-gray-400" style="margin-top: 0.25rem;">
-                            Certaines commandes nécessitent une autorisation sur l'appareil (caméra pour la lampe).
+                            Prenez le contrôle des écrans des utilisateurs pour des effets visuels amusants !
                         </p>
                         <div style="margin-top: 0.75rem;">
                             <label for="commandTarget" class="text-xs text-gray-400">Appareil cible</label>
@@ -619,29 +619,87 @@
                     </div>
                     <div style="padding: 1rem;">
                         <div class="command-grid">
+                            <!-- Écrans de couleur -->
                             <div class="command-card">
-                                <h3>📳 Vibreur</h3>
-                                <p class="text-xs text-gray-400">Déclenche une vibration (mobile uniquement).</p>
+                                <h3>🎨 Écran de couleur</h3>
+                                <p class="text-xs text-gray-400">Affiche un écran plein de couleur.</p>
                                 <div class="command-actions">
-                                    <button class="btn-primary" data-command="vibrate" data-pattern="short">Courte</button>
-                                    <button class="btn-primary" data-command="vibrate" data-pattern="long">Longue</button>
-                                    <button class="btn-primary" data-command="vibrate" data-pattern="pattern">Motif</button>
+                                    <button class="btn-primary" data-command="screen-color" data-color="#000000">⬛ Noir</button>
+                                    <button class="btn-primary" data-command="screen-color" data-color="#FFFFFF">⬜ Blanc</button>
+                                    <button class="btn-primary" data-command="screen-color" data-color="#FF0000">🟥 Rouge</button>
+                                    <button class="btn-primary" data-command="screen-color" data-color="#00FF00">🟩 Vert</button>
+                                    <button class="btn-primary" data-command="screen-color" data-color="#0000FF">🟦 Bleu</button>
+                                    <button class="btn-primary" data-command="screen-color" data-color="#FF1493">💗 Rose</button>
                                 </div>
                             </div>
+
+                            <!-- Affichage image -->
                             <div class="command-card">
-                                <h3>🔦 Lampe</h3>
-                                <p class="text-xs text-gray-400">Allume/éteint le flash si supporté.</p>
+                                <h3>🖼️ Afficher une image</h3>
+                                <p class="text-xs text-gray-400">Affiche une image en plein écran.</p>
+                                <div style="margin-top: 0.5rem;">
+                                    <input type="text" id="imageUrlInput" placeholder="URL de l'image..." 
+                                        style="width: 100%; padding: 0.5rem; background: #111827; border: 1px solid #374151; border-radius: 0.375rem; color: #F9FAFB; font-size: 0.875rem; margin-bottom: 0.5rem;">
+                                </div>
                                 <div class="command-actions">
-                                    <button class="btn-primary" data-command="torch-on">Allumer</button>
-                                    <button class="btn-primary" data-command="torch-off">Éteindre</button>
+                                    <button class="btn-primary" onclick="sendImageDisplay()">📺 Afficher</button>
+                                    <button class="btn-primary" data-command="clear-overlay">❌ Effacer</button>
                                 </div>
                             </div>
+
+                            <!-- Message géant -->
                             <div class="command-card">
-                                <h3>🔊 Son</h3>
-                                <p class="text-xs text-gray-400">Joue un petit bip (si autorisé).</p>
+                                <h3>💬 Message géant</h3>
+                                <p class="text-xs text-gray-400">Affiche un texte énorme.</p>
+                                <div style="margin-top: 0.5rem;">
+                                    <input type="text" id="messageInput" placeholder="Votre message..." 
+                                        style="width: 100%; padding: 0.5rem; background: #111827; border: 1px solid #374151; border-radius: 0.375rem; color: #F9FAFB; font-size: 0.875rem; margin-bottom: 0.5rem;">
+                                </div>
                                 <div class="command-actions">
-                                    <button class="btn-primary" data-command="beep" data-duration="200">Bip court</button>
-                                    <button class="btn-primary" data-command="beep" data-duration="600">Bip long</button>
+                                    <button class="btn-primary" onclick="sendGiantMessage('normal')">📝 Normal</button>
+                                    <button class="btn-primary" onclick="sendGiantMessage('comic')">🎭 Comic</button>
+                                    <button class="btn-primary" onclick="sendGiantMessage('matrix')">👾 Matrix</button>
+                                    <button class="btn-primary" data-command="clear-overlay">❌ Effacer</button>
+                                </div>
+                            </div>
+
+                            <!-- Effets visuels -->
+                            <div class="command-card">
+                                <h3>✨ Effets visuels</h3>
+                                <p class="text-xs text-gray-400">Effets spéciaux sur l'écran.</p>
+                                <div class="command-actions">
+                                    <button class="btn-primary" data-command="effect-matrix">🟢 Matrix</button>
+                                    <button class="btn-primary" data-command="effect-glitch">📺 Glitch</button>
+                                    <button class="btn-primary" data-command="effect-shake">📳 Secouer</button>
+                                    <button class="btn-primary" data-command="effect-rotate">🔄 Rotation</button>
+                                    <button class="btn-primary" data-command="effect-rainbow">🌈 Arc-en-ciel</button>
+                                    <button class="btn-primary" data-command="clear-overlay">❌ Stop</button>
+                                </div>
+                            </div>
+
+                            <!-- Contrôles système -->
+                            <div class="command-card">
+                                <h3>⚡ Contrôles système</h3>
+                                <p class="text-xs text-gray-400">Actions système sur l'appareil.</p>
+                                <div class="command-actions">
+                                    <button class="btn-primary" data-command="vibrate" data-pattern="short">📳 Vibrer</button>
+                                    <button class="btn-primary" data-command="beep" data-duration="300">🔊 Bip</button>
+                                    <button class="btn-primary" data-command="alert" data-message="👋 Message de l'admin !">💬 Alerte</button>
+                                    <button class="btn-primary" data-command="reload-page">🔄 Recharger</button>
+                                </div>
+                            </div>
+
+                            <!-- Fun extrême -->
+                            <div class="command-card">
+                                <h3>🎪 Fun extrême</h3>
+                                <p class="text-xs text-gray-400">Pour les fous !</p>
+                                <div class="command-actions">
+                                    <button class="btn-primary" data-command="effect-disco">🪩 Disco</button>
+                                    <button class="btn-primary" data-command="effect-spin">🌀 Spin</button>
+                                    <button class="btn-primary" data-command="effect-flip">🔃 Flip</button>
+                                    <button class="btn-primary" data-command="effect-bounce">⛹️ Rebond</button>
+                                    <button class="btn-primary" data-command="effect-chaos">💥 Chaos</button>
+                                    <button class="btn-primary" data-command="clear-overlay">🛑 STOP</button>
                                 </div>
                             </div>
                         </div>
@@ -811,9 +869,36 @@
                     if (button.dataset.duration) {
                         payload.durationMs = parseInt(button.dataset.duration, 10) || 200;
                     }
+                    if (button.dataset.color) {
+                        payload.color = button.dataset.color;
+                    }
+                    if (button.dataset.message) {
+                        payload.message = button.dataset.message;
+                    }
                     sendAdminCommand(action, payload);
                 });
             });
+        }
+
+        // Fonctions pour les nouvelles commandes fun
+        function sendImageDisplay() {
+            const imageUrl = document.getElementById('imageUrlInput').value.trim();
+            if (!imageUrl) {
+                showNotification('Entrez une URL d\'image', 'error');
+                return;
+            }
+            sendAdminCommand('display-image', { imageUrl });
+            document.getElementById('imageUrlInput').value = '';
+        }
+
+        function sendGiantMessage(style = 'normal') {
+            const message = document.getElementById('messageInput').value.trim();
+            if (!message) {
+                showNotification('Entrez un message', 'error');
+                return;
+            }
+            sendAdminCommand('giant-message', { message, style });
+            document.getElementById('messageInput').value = '';
         }
 
         // Load all data

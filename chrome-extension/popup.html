@@ -78,6 +78,27 @@
                     <button id="selectFiles" class="btn btn-primary">📄 Fichier(s)</button>
                     <button id="selectFolder" class="btn btn-primary">📁 Dossier</button>
                 </div>
+                
+                <!-- Options de confidentialité -->
+                <div class="privacy-options" style="margin-top: 1rem; padding: 0.75rem; background: #f3f4f6; border-radius: 0.375rem;">
+                    <label style="display: flex; align-items: center; font-size: 0.875rem; cursor: pointer;">
+                        <input type="checkbox" id="isPrivateCheckbox" style="margin-right: 0.5rem; cursor: pointer;">
+                        <span>🔒 Fichier privé (nécessite un code d'accès)</span>
+                    </label>
+                    <div id="accessCodeContainer" class="hidden" style="margin-top: 0.5rem;">
+                        <input 
+                            type="text" 
+                            id="customAccessCode" 
+                            class="input" 
+                            placeholder="Code d'accès personnalisé (optionnel)"
+                            style="font-size: 0.875rem; padding: 0.5rem;"
+                        />
+                        <p style="font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem;">
+                            Laissez vide pour générer un code automatiquement
+                        </p>
+                    </div>
+                </div>
+                
                 <div id="selectedFiles" class="selected-files hidden"></div>
                 <div id="uploadProgress" class="progress-container hidden">
                     <div class="progress-bar">
@@ -101,6 +122,42 @@
             </div>
         </section>
 
+        <!-- Notes & Links -->
+        <section id="notesSection" class="section hidden">
+            <div class="section-header">
+                <h2>📝 Notes & Liens</h2>
+            </div>
+            <div class="section-body">
+                <!-- Import Text -->
+                <div style="margin-bottom: 1rem;">
+                    <h3 style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">📝 Importer du texte</h3>
+                    <textarea id="importTextInput" class="input" placeholder="Collez ou saisissez votre texte ici..." style="min-height: 100px; resize: vertical; font-family: monospace; font-size: 0.813rem;"></textarea>
+                    <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                        <button id="sendTextBtn" class="btn btn-primary" style="flex: 1;">📤 Envoyer</button>
+                        <button id="clearTextBtn" class="btn btn-secondary">🗑️</button>
+                    </div>
+                </div>
+
+                <!-- Import Link -->
+                <div style="margin-bottom: 1rem;">
+                    <h3 style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">🔗 Importer un lien</h3>
+                    <input id="importLinkInput" type="url" class="input" placeholder="https://example.com" />
+                    <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                        <button id="sendLinkBtn" class="btn btn-primary" style="flex: 1;">📤 Envoyer</button>
+                        <button id="pasteLinkBtn" class="btn btn-secondary">📋 Coller</button>
+                    </div>
+                </div>
+
+                <!-- List -->
+                <div>
+                    <h3 style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Vos notes & liens</h3>
+                    <div id="notesLinksList" class="file-list">
+                        <p class="empty-state">Aucun contenu</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Devices -->
         <section id="devicesSection" class="section hidden">
             <div class="section-header">
@@ -114,6 +171,58 @@
         </section>
     </main>
     
+    <!-- Modal d'aperçu des fichiers -->
+    <div id="previewModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="previewTitle">Aperçu du fichier</h3>
+                <button class="modal-close" id="closePreviewBtn">✕</button>
+            </div>
+            <div class="modal-body" id="previewContent">
+                <!-- Le contenu sera inséré ici -->
+            </div>
+            <div class="modal-footer">
+                <button id="closePreviewFooterBtn" class="btn btn-secondary">Fermer</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de partage avec lien temporaire -->
+    <div id="shareLinkModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🔗 Partager avec un lien</h2>
+                <button id="closeShareLinkModal" class="modal-close">✕</button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-size: 0.875rem; margin-bottom: 0.5rem; font-weight: 500;">⏱️ Durée de validité</label>
+                    <select id="shareExpiration" class="input">
+                        <option value="1h">1 heure</option>
+                        <option value="24h" selected>24 heures</option>
+                        <option value="7d">7 jours</option>
+                        <option value="30d">30 jours</option>
+                    </select>
+                </div>
+                <button id="generateShareBtn" class="btn btn-primary" style="width: 100%;">🔗 Générer le lien</button>
+                <div id="shareResult" class="hidden" style="margin-top: 1rem;">
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-size: 0.875rem; margin-bottom: 0.5rem; font-weight: 500;">Lien de partage</label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input id="shareUrl" type="text" class="input" readonly style="flex: 1; font-size: 0.75rem;" />
+                            <button id="copyShareUrlBtn" class="btn btn-secondary">📋</button>
+                        </div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div id="shareQRCode" style="display: inline-block; padding: 0.5rem; background: white; border-radius: 0.375rem;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- PDF.js pour l'aperçu PDF (local) -->
+    <script src="lib/pdf.min.js"></script>
     <script src="lib/qrcode.min.js"></script>
     <script src="popup.js"></script>
 </body>
