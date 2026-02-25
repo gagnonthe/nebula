@@ -704,6 +704,14 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Relayer les actions de dessin collaboratif à tous les appareils
+  socket.on('drawing-action', (data) => {
+    if (!data || !data.action) return;
+    
+    // Relayer à tous les autres appareils (sauf l'émetteur)
+    socket.broadcast.emit('drawing-action', data);
+  });
+
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
     

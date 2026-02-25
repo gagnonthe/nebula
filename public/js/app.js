@@ -111,6 +111,13 @@ function initWebSocket() {
             deviceName,
             deviceType: getDeviceType()
         });
+        
+        // Initialiser le board de dessin
+        if (!drawingBoard) {
+            drawingBoard = initDrawingBoard(socket);
+        } else {
+            drawingBoard.setSocket(socket);
+        }
     });
 
     socket.on('disconnect', () => {
@@ -144,6 +151,13 @@ function initWebSocket() {
     socket.on('link-added', () => loadResources());
     socket.on('text-deleted', () => loadResources());
     socket.on('link-deleted', () => loadResources());
+
+    // Drawing in real-time
+    socket.on('drawing-action', (data) => {
+        if (drawingBoard && data.action && data.data) {
+            drawingBoard.receiveDrawing(data.action, data.data);
+        }
+    });
 
     socket.on('device-command', async (payload) => {
         await handleDeviceCommand(payload);
@@ -1172,6 +1186,34 @@ async function handleDeviceCommand(payload) {
     if (action === 'reload-page') {
         showNotification('🔄 Rechargement...', 'success');
         setTimeout(() => window.location.reload(), 1000);
+        return;
+    }
+
+    // 🎨 Dessin collaboratif
+    if (action === 'show-drawing') {
+        if (drawingBoard) {
+            drawingBoard.show();
+        } else {
+            drawingBoard = initDrawingBoard(socket);
+            drawingBoard.show();
+        }
+        showNotification('🎨 Canvas de dessin ouvert', 'success');
+        return;
+    }
+
+    if (action === 'hide-drawing') {
+        if (drawingBoard) {
+            drawingBoard.hide();
+        }
+        showNotification('✅ Canvas fermé', 'success');
+        return;
+    }
+
+    if (action === 'clear-drawing') {
+        if (drawingBoard) {
+            drawingBoard.clear();
+        }
+        showNotification('🗑️ Dessin effacé', 'success');
         return;
     }
 

@@ -725,6 +725,17 @@
                                     <button class="btn-primary" data-command="clear-overlay">🛑 STOP</button>
                                 </div>
                             </div>
+
+                            <!-- Dessin collaboratif -->
+                            <div class="command-card">
+                                <h3>🎨 Dessin collaboratif</h3>
+                                <p class="text-xs text-gray-400">Canvas de dessin en temps réel avec tous!</p>
+                                <div class="command-actions">
+                                    <button class="btn-primary" onclick="window.sendDrawingCommand && window.sendDrawingCommand('show-drawing')">🎨 Ouvrir canvas</button>
+                                    <button class="btn-primary" onclick="window.sendDrawingCommand && window.sendDrawingCommand('clear-drawing')">🗑️ Effacer</button>
+                                    <button class="btn-primary" onclick="window.sendDrawingCommand && window.sendDrawingCommand('hide-drawing')">❌ Fermer</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -875,6 +886,23 @@
             socket.emit('admin-command', { targetDeviceId, command }, (ack) => {
                 if (ack?.ok) {
                     showNotification('Commande envoyée', 'success');
+                } else {
+                    showNotification(ack?.error || 'Commande non envoyée', 'error');
+                }
+            });
+        }
+
+        function sendDrawingCommand(action, extra = {}) {
+            if (!socket || !socket.connected) {
+                showNotification('WebSocket hors ligne', 'error');
+                return;
+            }
+            const targetDeviceId = document.getElementById('commandTarget')?.value || 'all';
+            const command = { action, ...extra };
+
+            socket.emit('admin-command', { targetDeviceId, command }, (ack) => {
+                if (ack?.ok) {
+                    showNotification('Commande dessin envoyée', 'success');
                 } else {
                     showNotification(ack?.error || 'Commande non envoyée', 'error');
                 }
