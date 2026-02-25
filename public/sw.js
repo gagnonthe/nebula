@@ -1,9 +1,17 @@
-const CACHE_NAME = 'file-share-v17';
+const CACHE_NAME = 'nebula-v2026-02-25'; // Version avec date pour forcer le rafraîchissement
 const urlsToCache = [
   '/',
   '/index.html',
-  '/js/app.js',
   '/manifest.json'
+];
+
+// Fichiers qui ne doivent PAS être mis en cache (always fetch fresh)
+const noCachePatterns = [
+  '/js/',
+  '/css/',
+  '/api/',
+  '.js',
+  '.css'
 ];
 
 // Installation du service worker
@@ -53,6 +61,34 @@ self.addEventListener('activate', (event) => {
 
 // Interception des requêtes
 self.addEventListener('fetch', (event) => {
+  const url = event.request.url;
+  
+  // NETWORK FIRST pour les JS et CSS (toujours chercher la version fraîche)
+  const isScript = url.includes('/js/') || url.includes('/css/') || url.endsWith('.js') || url.endsWith('.css');
+  
+  if (isScript) {
+    // Network first pour les assets
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+            return response;
+          }
+          return response;
+        })
+        .catch(() => {
+          // Si pas de réseau, utiliser le cache
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
+  
+  // CACHE FIRST pour HTML et autres fichiers
   event.respondWith(
     caches.match(event.request)
       .then((response) => {

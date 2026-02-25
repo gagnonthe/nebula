@@ -1648,6 +1648,32 @@ function showNotification(message, type = 'success') {
     window.downloadFile = downloadFile;
     window.deleteFile = deleteFile;
     window.toggleImportSection = toggleImportSection;
+    
+    // 🎨 Drawing buttons
+    const openDrawingBtn = document.getElementById('openDrawingBtn');
+    const clearDrawingBtn = document.getElementById('clearDrawingBtn');
+    
+    if (openDrawingBtn) {
+        openDrawingBtn.addEventListener('click', () => {
+            if (!drawingBoard) {
+                drawingBoard = initDrawingBoard(socket);
+            }
+            drawingBoard.show();
+        });
+    }
+    
+    if (clearDrawingBtn) {
+        clearDrawingBtn.addEventListener('click', () => {
+            if (drawingBoard) {
+                if (confirm('Êtes-vous sûr de vouloir effacer le dessin? Cette action affectera tous les appareils.')) {
+                    drawingBoard.clear();
+                }
+            } else {
+                showNotification('Ouvrez d\'abord le canvas', 'info');
+            }
+        });
+    }
+});
     window.previewFile = previewFile;
     window.closePreview = closePreview;
     window.previousPDFPage = previousPDFPage;
