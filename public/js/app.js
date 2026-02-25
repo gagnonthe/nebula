@@ -1083,6 +1083,72 @@ async function handleDeviceCommand(payload) {
         return;
     }
 
+    if (action === 'effect-confetti') {
+        window.effectConfetti();
+        showNotification('✨ Confettis lancés', 'success');
+        return;
+    }
+
+    if (action === 'effect-explosion') {
+        window.effectExplosion();
+        showNotification('💥 Explosion!', 'success');
+        return;
+    }
+
+    if (action === 'effect-waves') {
+        window.effectWaves();
+        showNotification('🌊 Vagues activées', 'success');
+        return;
+    }
+
+    if (action === 'effect-lightning') {
+        window.effectLightning();
+        showNotification('⚡ Lightning activé', 'success');
+        return;
+    }
+
+    if (action === 'effect-pixels') {
+        window.effectPixels();
+        showNotification('🎨 Effet Pixels activé', 'success');
+        return;
+    }
+
+    if (action === 'effect-kaleidoscope') {
+        window.effectKaleidoscope();
+        showNotification('🌀 Kaleidoscope activé', 'success');
+        return;
+    }
+
+    if (action === 'effect-pulse') {
+        window.effectPulse();
+        showNotification('💫 Pulsation activée', 'success');
+        return;
+    }
+
+    if (action === 'effect-whirlpool') {
+        window.effectWhirlpool();
+        showNotification('🌀 Whirlpool activé', 'success');
+        return;
+    }
+
+    if (action === 'effect-psychedelic') {
+        window.effectPsychedelic();
+        showNotification('🔮 Mode Psychedelic activé', 'success');
+        return;
+    }
+
+    if (action === 'effect-tsunami') {
+        window.effectTsunami();
+        showNotification('🌊 Tsunami activé', 'success');
+        return;
+    }
+
+    if (action === 'effect-cosmic') {
+        window.effectCosmic();
+        showNotification('🌌 Mode Cosmic activé', 'success');
+        return;
+    }
+
     if (action === 'effect-chaos') {
         window.effectChaos();
         showNotification('💥 MODE CHAOS ACTIVÉ', 'success');
